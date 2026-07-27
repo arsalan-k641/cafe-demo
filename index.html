@@ -3,63 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منوی کافه</title>
+    <title>ردیاب زنده GPS</title>
+
+    <!-- Leaflet CSS (برای نمایش نقشه) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f9; text-align: center; }
-        .card { background: white; padding: 15px; margin: 10px auto; max-width: 300px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        button { background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
-        input { padding: 8px; margin-bottom: 10px; width: 80%; }
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #1e1e2f; color: #fff; text-align: center; }
+        #map { height: 400px; width: 100%; max-width: 800px; margin: 20px auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .info-card { background: #2d2d44; padding: 15px; max-width: 800px; margin: 0 auto; border-radius: 8px; display: flex; justify-content: space-around; flex-wrap: wrap; }
+        .status { color: #28a745; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h1>☕ منوی کافه</h1>
+    <h2>📍 ردیاب برخط ESP32 + GPS</h2>
+    <p>وضعیت سیستم: <span id="connectionStatus" class="status">در حال اتصال...</span></p>
 
-    <div class="card">
-        <label>شماره میز:</label><br><br>
-        <input type="number" id="tableNum" placeholder="مثلاً: 5">
+    <div class="info-card">
+        <div>عرض جغرافیایی (Lat): <strong id="latVal">--</strong></div>
+        <div>طول جغرافیایی (Lng): <strong id="lngVal">--</strong></div>
+        <div>سرعت: <strong id="speedVal">--</strong> km/h</div>
+        <div>تعداد ماهواره: <strong id="satsVal">--</strong></div>
     </div>
 
-    <div class="card">
-        <h3>اسپرسو</h3>
-        <p>قیمت: ۵۰,۰۰۰ تومان</p>
-        <button onclick="sendOrder('اسپرسو')">سفارش اسپرسو</button>
-    </div>
-
-    <div class="card">
-        <h3>کیک شکلاتی</h3>
-        <p>قیمت: ۸۰,۰۰۰ تومان</p>
-        <button onclick="sendOrder('کیک شکلاتی')">سفارش کیک</button>
-    </div>
+    <!-- کادر نقشه -->
+    <div id="map"></div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <!-- Leaflet JS (کتابخانه نقشه) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // ⚠️ کلیدهای Firebase را اینجا جایگزین کنید
+        // 1. تنظیمات فایربیس
         const firebaseConfig = {
-            databaseURL: "https://cafe-demo-36532-default-rtdb.firebaseio.com/"
+            databaseURL: "https://cafe-demo-36532-default-rtdb.firebaseio.com/" // 👈 آدرس دقیق فایربیس شما
         };
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        function sendOrder(itemName) {
-            const table = document.getElementById('tableNum').value;
-            if(!table) {
-                alert('لطفا شماره میز را وارد کنید');
+        // 2. ساخت نقشه اولیه (مرکز اولیه روی ایران)
+        const map = L.map('map').setView([35.6892, 51.3890], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        let marker = null;
+
+        // 3. گوش دادن برخط به تغییرات دیتابیس
+        database.ref('gps_location').on('value', (snapshot) => {
+            const data = snapshot.val();
+            
+            if (!data) {
+                document.getElementById('connectionStatus').innerText = 'داده‌ای دریافت نشد.';
                 return;
             }
 
-            // ذخیره سفارش در فایربیس
-            database.ref('orders').push({
-                item: itemName,
-                table: table,
-                time: new Date().toLocaleTimeString('fa-IR')
-            });
+            document.getElementById('connectionStatus').innerText = '🟢 متصل و در حال به‌روزرسانی زنده';
+            document.getElementById('latVal').innerText = data.lat.toFixed(6);
+            document.getElementById('lngVal').innerText = data.lng.toFixed(6);
+            document.getElementById('speedVal').innerText = data.speed ? data.speed.toFixed(1) : '0';
+            document.getElementById('satsVal').innerText = data.sats || '0';
 
-            alert('سفارش شما ثبت شد!');
-        }
+            const lat = data.lat;
+            const lng = data.lng;
+
+            // به‌روزرسانی مارکر روی نقشه
+            if (marker) {
+                marker.setLatLng([lat, lng]);
+            } else {
+                marker = L.marker([lat, lng]).addTo(map).bindPopup('موقعیت ESP32').openPopup();
+            }
+
+            // تنظیم مرکز نقشه روی موقعیت جدید
+            map.panTo([lat, lng]);
+        });
     </script>
 </body>
 </html>
