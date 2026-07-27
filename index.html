@@ -1,86 +1,493 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ردیاب زنده GPS</title>
-
-    <!-- Leaflet CSS (برای نمایش نقشه) -->
+    <title>GPS Tracker - Live Location</title>
+    
+    <!-- Leaflet CSS for Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 20px; background: #1e1e2f; color: #fff; text-align: center; }
-        #map { height: 400px; width: 100%; max-width: 800px; margin: 20px auto; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        .info-card { background: #2d2d44; padding: 15px; max-width: 800px; margin: 0 auto; border-radius: 8px; display: flex; justify-content: space-around; flex-wrap: wrap; }
-        .status { color: #28a745; font-weight: bold; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #0f3460;
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.online {
+            background: #00ff88;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 80px);
+        }
+        
+        /* Map Container */
+        .map-container {
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid #1a1a2e;
+            position: relative;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Info Panel */
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+        
+        .info-card {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid #0f3460;
+        }
+        
+        .info-card h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+        
+        .info-value {
+            color: #fff;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* History List */
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .history-time {
+            color: #00d4ff;
+            min-width: 60px;
+        }
+        
+        .history-coords {
+            color: #ccc;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #0088cc);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
+        }
+        
+        /* No Data Message */
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+        
+        .no-data .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .map-container {
+                height: 50vh;
+            }
+        }
     </style>
 </head>
 <body>
-
-    <h2>📍 ردیاب برخط ESP32 + GPS</h2>
-    <p>وضعیت سیستم: <span id="connectionStatus" class="status">در حال اتصال...</span></p>
-
-    <div class="info-card">
-        <div>عرض جغرافیایی (Lat): <strong id="latVal">--</strong></div>
-        <div>طول جغرافیایی (Lng): <strong id="lngVal">--</strong></div>
-        <div>سرعت: <strong id="speedVal">--</strong> km/h</div>
-        <div>تعداد ماهواره: <strong id="satsVal">--</strong></div>
-    </div>
-
-    <!-- کادر نقشه -->
-    <div id="map"></div>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <header class="header">
+        <h1>📍 GPS Tracker</h1>
+        <div class="status-badge">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Connecting...</span>
+        </div>
+    </header>
     
-    <!-- Leaflet JS (کتابخانه نقشه) -->
+    <main class="main-content">
+        <!-- Map -->
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+        
+        <!-- Info Panel -->
+        <div class="info-panel">
+            <!-- Current Location -->
+            <div class="info-card">
+                <h3>🎯 Current Location</h3>
+                <div id="locationInfo">
+                    <div class="no-data">
+                        <div class="icon">📡</div>
+                        <p>Waiting for GPS data...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- GPS Stats -->
+            <div class="info-card">
+                <h3>📊 GPS Stats</h3>
+                <div id="gpsStats">
+                    <div class="no-data">
+                        <div class="icon">🛰️</div>
+                        <p>No satellite data yet</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="centerOnMarker()">Center Map</button>
+                <button class="btn btn-secondary" onclick="clearHistory()">Clear Path</button>
+            </div>
+            
+            <!-- Location History -->
+            <div class="info-card">
+                <h3>📜 Recent Updates</h3>
+                <div class="history-list" id="historyList">
+                    <div class="no-data">
+                        <p>History will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+    
     <script>
-        // 1. تنظیمات فایربیس
+        // ============== FIREBASE CONFIGURATION ==============
+        // REPLACE WITH YOUR FIREBASE CONFIG
         const firebaseConfig = {
-            databaseURL: "https://cafe-demo-36532-default-rtdb.firebaseio.com/" // 👈 آدرس دقیق فایربیس شما
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
+        
+        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-
-        // 2. ساخت نقشه اولیه (مرکز اولیه روی ایران)
-        const map = L.map('map').setView([35.6892, 51.3890], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
+        
+        // ============== MAP SETUP ==============
+        const map = L.map('map').setView([0, 0], 2);
+        
+        // Dark map tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap contributors © CARTO',
+            maxZoom: 19
         }).addTo(map);
-
+        
+        // Custom marker icon
+        const markerIcon = L.divIcon({
+            html: `<div style="
+                width: 20px;
+                height: 20px;
+                background: #00d4ff;
+                border: 3px solid white;
+                border-radius: 50%;
+                box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+            "></div>`,
+            className: '',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+        
         let marker = null;
-
-        // 3. گوش دادن برخط به تغییرات دیتابیس
-        database.ref('gps_location').on('value', (snapshot) => {
+        let pathLine = null;
+        let pathCoords = [];
+        let lastLocation = null;
+        
+        // ============== LISTEN TO FIREBASE ==============
+        const locationRef = database.ref('/gps_tracker/current');
+        
+        locationRef.on('value', (snapshot) => {
             const data = snapshot.val();
             
-            if (!data) {
-                document.getElementById('connectionStatus').innerText = 'داده‌ای دریافت نشد.';
-                return;
+            if (data && data.latitude && data.longitude) {
+                updateStatus(true);
+                updateLocation(data);
+                updateStats(data);
+                addToHistory(data);
+            } else {
+                updateStatus(false);
             }
-
-            document.getElementById('connectionStatus').innerText = '🟢 متصل و در حال به‌روزرسانی زنده';
-            document.getElementById('latVal').innerText = data.lat.toFixed(6);
-            document.getElementById('lngVal').innerText = data.lng.toFixed(6);
-            document.getElementById('speedVal').innerText = data.speed ? data.speed.toFixed(1) : '0';
-            document.getElementById('satsVal').innerText = data.sats || '0';
-
-            const lat = data.lat;
-            const lng = data.lng;
-
-            // به‌روزرسانی مارکر روی نقشه
+        }, (error) => {
+            console.error("Firebase error:", error);
+            updateStatus(false);
+            document.getElementById('statusText').textContent = "Connection Error";
+        });
+        
+        // ============== UPDATE FUNCTIONS ==============
+        function updateStatus(online) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            
+            if (online) {
+                dot.classList.add('online');
+                text.textContent = "Live";
+            } else {
+                dot.classList.remove('online');
+                text.textContent = "Offline";
+            }
+        }
+        
+        function updateLocation(data) {
+            const lat = data.latitude;
+            const lng = data.longitude;
+            
+            // Update info panel
+            document.getElementById('locationInfo').innerHTML = `
+                <div class="info-row">
+                    <span class="info-label">Latitude</span>
+                    <span class="info-value">${lat.toFixed(6)}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Longitude</span>
+                    <span class="info-value">${lng.toFixed(6)}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Google Maps</span>
+                    <a href="https://www.google.com/maps?q=${lat},${lng}" 
+                       target="_blank" style="color: #00d4ff; text-decoration: none;">Open →</a>
+                </div>
+            `;
+            
+            // Update map marker
             if (marker) {
                 marker.setLatLng([lat, lng]);
             } else {
-                marker = L.marker([lat, lng]).addTo(map).bindPopup('موقعیت ESP32').openPopup();
+                marker = L.marker([lat, lng], { icon: markerIcon }).addTo(map);
             }
-
-            // تنظیم مرکز نقشه روی موقعیت جدید
-            map.panTo([lat, lng]);
-        });
+            
+            // Add to path
+            pathCoords.push([lat, lng]);
+            
+            if (pathLine) {
+                pathLine.setLatLngs(pathCoords);
+            } else {
+                pathLine = L.polyline(pathCoords, {
+                    color: '#00d4ff',
+                    weight: 3,
+                    opacity: 0.7
+                }).addTo(map);
+            }
+            
+            // Center map on first location
+            if (!lastLocation) {
+                map.setView([lat, lng], 15);
+            }
+            
+            lastLocation = [lat, lng];
+        }
+        
+        function updateStats(data) {
+            const statsHtml = `
+                <div class="info-row">
+                    <span class="info-label">Speed</span>
+                    <span class="info-value">${data.speed || 0} km/h</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Altitude</span>
+                    <span class="info-value">${data.altitude || 0} m</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Satellites</span>
+                    <span class="info-value">${data.satellites || 0}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">HDOP</span>
+                    <span class="info-value">${data.hdop || '-'}</span>
+                </div>
+            `;
+            document.getElementById('gpsStats').innerHTML = statsHtml;
+        }
+        
+        function addToHistory(data) {
+            const historyList = document.getElementById('historyList');
+            const now = new Date();
+            const time = now.toLocaleTimeString();
+            
+            // Remove "no data" message if present
+            const noData = historyList.querySelector('.no-data');
+            if (noData) noData.remove();
+            
+            // Add new item at top
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `
+                <span class="history-time">${time}</span>
+                <span class="history-coords">${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}</span>
+            `;
+            
+            historyList.insertBefore(item, historyList.firstChild);
+            
+            // Keep only last 20 items
+            while (historyList.children.length > 20) {
+                historyList.removeChild(historyList.lastChild);
+            }
+        }
+        
+        // ============== MAP ACTIONS ==============
+        function centerOnMarker() {
+            if (lastLocation) {
+                map.setView(lastLocation, 15);
+            }
+        }
+        
+        function clearHistory() {
+            pathCoords = [];
+            if (pathLine) {
+                map.removeLayer(pathLine);
+                pathLine = null;
+            }
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+            lastLocation = null;
+        }
     </script>
 </body>
 </html>
