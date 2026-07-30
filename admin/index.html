@@ -2,52 +2,637 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>پنل سفارشات کافه</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>کافه دمو — پنل مدیریت</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        base:'#0d0c0a',surface:'#161412',card:'#1e1b17','card-h':'#262219',
+                        bdr:'#2d2922',gold:'#c8a44e','gold-h':'#dbb85a',cream:'#ede5d4',
+                        sand:'#a09583',stone:'#6b6055',ok:'#4caf50',warn:'#ff9800',bad:'#e53935',
+                    },
+                    fontFamily:{fa:['Vazirmatn','sans-serif']}
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #222; color: #fff; }
-        .order-box { background: #333; border-right: 5px solid #28a745; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Vazirmatn',sans-serif;background:#0d0c0a;color:#ede5d4;overflow-x:hidden}
+        ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0d0c0a}::-webkit-scrollbar-thumb{background:#2d2922;border-radius:3px}
+        .tab-btn{transition:all .2s;color:#a09583;border-bottom:2px solid transparent}
+        .tab-btn:hover{color:#ede5d4}.tab-btn.on{color:#c8a44e;border-color:#c8a44e}
+        .admin-row{transition:background .2s}.admin-row:hover{background:#262219}
+        .toggle-t{width:40px;height:22px;border-radius:11px;background:#2d2922;position:relative;cursor:pointer;transition:background .25s;flex-shrink:0}
+        .toggle-t.on{background:#c8a44e}
+        .toggle-t .thumb{width:18px;height:18px;border-radius:50%;background:#ede5d4;position:absolute;top:2px;start:2px;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+        .toggle-t.on .thumb{transform:translateX(18px)}
+        .fi{background:#161412;border:1px solid #2d2922;color:#ede5d4;border-radius:.5rem;padding:.6rem .85rem;width:100%;font-family:'Vazirmatn',sans-serif;font-size:.85rem;outline:none;transition:border-color .2s,box-shadow .2s}
+        .fi:focus{border-color:#c8a44e;box-shadow:0 0 0 3px rgba(200,164,78,.12)}
+        .fi::placeholder{color:#6b6055}
+        select.fi{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%23a09583' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left .75rem center}
+        .modal-bg{opacity:0;pointer-events:none;transition:opacity .25s}.modal-bg.open{opacity:1;pointer-events:all}
+        .modal-box{transform:scale(.92) translateY(16px);opacity:0;transition:transform .25s,opacity .25s}
+        .modal-bg.open .modal-box{transform:scale(1) translateY(0);opacity:1}
+        .toast-in{animation:tIn .3s ease forwards}.toast-out{animation:tOut .25s ease forwards}
+        @keyframes tIn{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+        @keyframes tOut{from{opacity:1}to{transform:translateY(-8px);opacity:0}}
+        .order-card{border-right:3px solid transparent;transition:border-color .2s}
+        .order-card.s-pending{border-color:#ff9800}
+        .order-card.s-paid{border-color:#4caf50}
+        .order-card.s-sent{border-color:#c8a44e}
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
     </style>
 </head>
 <body>
+    <!-- ===== صفحه ورود ===== -->
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background:radial-gradient(ellipse at 50% 40%,rgba(200,164,78,.08) 0%,transparent 60%),#0d0c0a">
+        <div class="text-center max-w-sm w-full">
+            <div class="w-20 h-20 rounded-full border-2 border-gold/30 flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-shield-halved text-gold text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-black text-cream mb-1">پنل مدیریت</h1>
+            <p class="text-sand text-sm mb-6">رمز عبور مدیر را وارد کنید</p>
+            <form onsubmit="handleLogin(event)" class="space-y-3">
+                <input type="password" id="passInput" class="fi text-center text-lg tracking-widest" placeholder="رمز عبور" required autofocus>
+                <button type="submit" class="w-full py-3 bg-gold text-base font-bold rounded-lg hover:bg-gold-h transition text-sm">ورود</button>
+            </form>
+        </div>
+    </div>
 
-    <h1>📥 سفارشات دریافتی</h1>
-    <div id="ordersList">در حال دریافت سفارشات...</div>
+    <!-- ===== اپلیکیشن مدیریت ===== -->
+    <div id="adminApp" class="hidden min-h-screen">
+        <!-- هدر -->
+        <header class="sticky top-0 z-40 bg-surface border-b border-bdr">
+            <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
+                <h2 id="adminTitle" class="font-bold text-cream text-sm">پنل مدیریت</h2>
+                <div class="flex items-center gap-2">
+                    <button onclick="downloadJSON()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gold/10 text-gold text-xs font-medium hover:bg-gold/20 transition"><i class="fas fa-download" style="font-size:10px"></i><span class="hidden sm:inline">دانلود JSON</span></button>
+                    <button onclick="logout()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sand text-xs hover:text-bad transition"><i class="fas fa-sign-out-alt" style="font-size:10px"></i><span class="hidden sm:inline">خروج</span></button>
+                </div>
+            </div>
+            <!-- تب‌ها -->
+            <div class="max-w-6xl mx-auto px-4 flex gap-1 overflow-x-auto">
+                <button class="tab-btn on px-4 py-2.5 text-xs font-medium whitespace-nowrap" onclick="switchTab('dashboard',this)"><i class="fas fa-chart-bar ms-1" style="font-size:10px"></i>داشبورد</button>
+                <button class="tab-btn px-4 py-2.5 text-xs font-medium whitespace-nowrap" onclick="switchTab('menu',this)"><i class="fas fa-utensils ms-1" style="font-size:10px"></i>منو</button>
+                <button class="tab-btn px-4 py-2.5 text-xs font-medium whitespace-nowrap" onclick="switchTab('orders',this)"><i class="fas fa-receipt ms-1" style="font-size:10px"></i>سفارشات</button>
+                <button class="tab-btn px-4 py-2.5 text-xs font-medium whitespace-nowrap" onclick="switchTab('settings',this)"><i class="fas fa-cog ms-1" style="font-size:10px"></i>تنظیمات</button>
+            </div>
+        </header>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+        <div class="max-w-6xl mx-auto px-4 py-6">
+            <!-- ===== تب داشبورد ===== -->
+            <div id="tab-dashboard" class="tab-content">
+                <div id="statsRow" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6"></div>
+                <h3 class="font-bold text-cream text-sm mb-3">آخرین سفارشات</h3>
+                <div id="recentOrders" class="space-y-2"></div>
+            </div>
+
+            <!-- ===== تب منو ===== -->
+            <div id="tab-menu" class="tab-content hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-cream text-sm">آیتم‌های منو</h3>
+                    <button onclick="showItemModal()" class="flex items-center gap-1.5 px-4 py-2 bg-gold text-base font-bold rounded-lg hover:bg-gold-h transition text-xs"><i class="fas fa-plus" style="font-size:10px"></i>افزودن آیتم</button>
+                </div>
+                <div id="adminMenuList" class="space-y-2"></div>
+                <div id="emptyMenu" class="hidden text-center py-16"><i class="fas fa-folder-open text-3xl text-stone mb-3 block"></i><p class="text-sand text-sm">آیتمی وجود ندارد</p></div>
+            </div>
+
+            <!-- ===== تب سفارشات ===== -->
+            <div id="tab-orders" class="tab-content hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div class="flex gap-1.5 flex-wrap">
+                        <button class="cat-pill on px-3 py-1.5 rounded-full text-xs font-medium" onclick="filterOrders('all',this)">همه</button>
+                        <button class="cat-pill px-3 py-1.5 rounded-full text-xs font-medium" onclick="filterOrders('pending',this)">در انتظار</button>
+                        <button class="cat-pill px-3 py-1.5 rounded-full text-xs font-medium" onclick="filterOrders('paid',this)">پرداخت شده</button>
+                        <button class="cat-pill px-3 py-1.5 rounded-full text-xs font-medium" onclick="filterOrders('sent',this)">ارسال شده</button>
+                    </div>
+                    <input type="text" id="orderSearch" class="fi !w-full sm:!w-48 !py-2 !text-xs" placeholder="جستجوی شماره میز..." oninput="renderOrders()">
+                </div>
+                <div id="ordersList" class="space-y-3"></div>
+                <div id="emptyOrders" class="hidden text-center py-16"><i class="fas fa-inbox text-3xl text-stone mb-3 block"></i><p class="text-sand text-sm">سفارشی یافت نشد</p></div>
+            </div>
+
+            <!-- ===== تب تنظیمات ===== -->
+            <div id="tab-settings" class="tab-content hidden">
+                <div class="max-w-md space-y-5">
+                    <div>
+                        <label class="text-xs text-sand font-medium block mb-1.5">نام رستوران</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="setName" class="fi flex-1">
+                            <button onclick="saveName()" class="px-4 py-2 bg-bdr text-cream rounded-lg hover:bg-stone transition text-xs font-medium whitespace-nowrap">ذخیره</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs text-sand font-medium block mb-1.5">تغییر رمز عبور</label>
+                        <div class="flex gap-2">
+                            <input type="password" id="setPass" class="fi flex-1" placeholder="رمز جدید">
+                            <button onclick="savePass()" class="px-4 py-2 bg-bdr text-cream rounded-lg hover:bg-stone transition text-xs font-medium whitespace-nowrap">تغییر</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== مودال آیتم ===== -->
+    <div id="itemModal" class="modal-bg fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+        <div class="modal-box bg-card rounded-2xl border border-bdr p-6 w-full max-w-lg my-8">
+            <h3 id="itemModalTitle" class="font-bold text-cream text-lg mb-5">افزودن آیتم جدید</h3>
+            <form onsubmit="saveItem(event)" class="space-y-3.5">
+                <div><label class="text-xs text-sand font-medium block mb-1">نام آیتم</label><input type="text" id="fName" class="fi" required></div>
+                <div><label class="text-xs text-sand font-medium block mb-1">توضیحات</label><textarea id="fDesc" class="fi" rows="2" required></textarea></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="text-xs text-sand font-medium block mb-1">قیمت (تومان)</label><input type="number" id="fPrice" class="fi" min="0" required></div>
+                    <div><label class="text-xs text-sand font-medium block mb-1">دسته‌بندی</label>
+                        <select id="fCat" class="fi" required>
+                            <option value="starters">پیش‌غذا</option>
+                            <option value="mains">غذای اصلی</option>
+                            <option value="desserts">دسر</option>
+                            <option value="drinks">نوشیدنی</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs text-sand font-medium block mb-1">تصویر</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="fImg" class="fi flex-1" placeholder="آدرس URL تصویر">
+                        <label class="flex items-center gap-1.5 px-3 py-2 bg-bdr text-cream rounded-lg hover:bg-stone transition text-xs cursor-pointer whitespace-nowrap">
+                            <i class="fas fa-upload" style="font-size:10px"></i>آپلود
+                            <input type="file" accept="image/*" class="hidden" onchange="handleUpload(event)">
+                        </label>
+                    </div>
+                    <img id="imgPreview" class="hidden mt-2 w-full h-32 object-cover rounded-lg border border-bdr">
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="fAvail" class="toggle-t on" onclick="this.classList.toggle('on')" role="switch" tabindex="0"><div class="thumb"></div></div>
+                    <span class="text-xs text-sand font-medium">موجود</span>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="flex-1 py-2.5 bg-gold text-base font-bold rounded-lg hover:bg-gold-h transition text-sm">ذخیره</button>
+                    <button type="button" onclick="hideItemModal()" class="px-5 py-2.5 bg-bdr text-cream rounded-lg hover:bg-stone transition text-sm">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== مودال حذف ===== -->
+    <div id="delModal" class="modal-bg fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="modal-box bg-card rounded-2xl border border-bdr p-6 w-full max-w-sm text-center">
+            <div class="w-14 h-14 rounded-full bg-bad/10 flex items-center justify-center mx-auto mb-4"><i class="fas fa-trash-alt text-bad text-xl"></i></div>
+            <h3 class="font-bold text-cream text-lg mb-2">حذف آیتم</h3>
+            <p class="text-sand text-sm mb-5">آیا از حذف <strong id="delName" class="text-cream"></strong> مطمئن هستید؟</p>
+            <div class="flex gap-2">
+                <button onclick="hideDelModal()" class="flex-1 py-2.5 bg-bdr text-cream rounded-lg hover:bg-stone transition text-sm">انصراف</button>
+                <button onclick="confirmDel()" class="flex-1 py-2.5 bg-bad text-cream rounded-lg hover:opacity-90 transition text-sm font-bold">حذف</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- تست -->
+    <div id="toasts" class="fixed bottom-4 end-4 z-[200] space-y-2 max-w-xs"></div>
 
     <script>
-        // ⚠️ همان کلیدهای Firebase را اینجا قرار دهید
-        const firebaseConfig = {
-            databaseURL: "https://cafe-demo-36532-default-rtdb.firebaseio.com/"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+    // ===================== فایربیس =====================
+    const firebaseConfig = {
+        apiKey:"AIzaSyBg0db4HZtFPMp7nbnQLsLhsgWov3Lw7v0",
+        authDomain:"cafe-demo-36532.firebaseapp.com",
+        projectId:"cafe-demo-36532",
+        storageBucket:"cafe-demo-36532.firebasestorage.app",
+        messagingSenderId:"139708235074",
+        appId:"1:139708235074:web:0421f58c576b0f48149cdb"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-        const ordersList = document.getElementById('ordersList');
+    // ===================== ثابت‌ها =====================
+    const SEED = [
+        {name:'سالاد سزار',description:'کاهو رومی، پنیر پارمزان، نان تست و سس مخصوص',price:65000,category:'starters',image:'https://picsum.photos/seed/caesar88/400/300',available:true},
+        {name:'سوپ جو',description:'سوپ گرم جو با سبزیجات تازه و لیمو',price:45000,category:'starters',image:'https://picsum.photos/seed/soup44/400/300',available:true},
+        {name:'ماست و خیار',description:'ماست محلی با خیار، نعناع و گردو',price:35000,category:'starters',image:'https://picsum.photos/seed/mastkhiar7/400/300',available:true},
+        {name:'کباب کوبیده',description:'دو سیخ کباب کوبیده مخصوص با گوجه کبابی و برنج ایرانی',price:185000,category:'mains',image:'https://picsum.photos/seed/kabab22/400/300',available:true},
+        {name:'جوجه کباب',description:'سینه مرغ مرینیت شده با زعفران، گریل شده با برنج و گوجه',price:165000,category:'mains',image:'https://picsum.photos/seed/joojeh33/400/300',available:true},
+        {name:'قرمه‌سبزی',description:'خورشت قرمه‌سبزی اصیل ایرانی با لوبیا قرمز و برنج',price:145000,category:'mains',image:'https://picsum.photos/seed/ghormeh11/400/300',available:true},
+        {name:'زرشک پلو با مرغ',description:'برنج زعفرینی با زرشک و ران مرغ',price:155000,category:'mains',image:'https://picsum.photos/seed/zereshk55/400/300',available:false},
+        {name:'باقلوا',description:'باقلوا پسته و بادام تبریزی',price:55000,category:'desserts',image:'https://picsum.photos/seed/baklava77/400/300',available:true},
+        {name:'فرنی',description:'فرنی سنتی با گلاب و پسته',price:35000,category:'desserts',image:'https://picsum.photos/seed/freni66/400/300',available:true},
+        {name:'دوغ',description:'دوغ محلی با نعناع و پونه',price:15000,category:'drinks',image:'https://picsum.photos/seed/doogh99/400/300',available:true},
+        {name:'شربت بهارنارنج',description:'شربت خنک بهارنارنج با عرق نعناع',price:25000,category:'drinks',image:'https://picsum.photos/seed/sharbat12/400/300',available:true},
+        {name:'چای دم‌کرده',description:'چای ایرانی دم‌کرده با نبات و لیمو عمانی',price:20000,category:'drinks',image:'https://picsum.photos/seed/chai34/400/300',available:true},
+    ];
+    const CAT_LABELS = {starters:'پیش‌غذا',mains:'غذای اصلی',desserts:'دسر',drinks:'نوشیدنی'};
+    const STATUS_MAP = {
+        pending:{label:'در انتظار پرداخت',color:'text-warn',bg:'bg-warn/10',icon:'fa-clock'},
+        paid:{label:'پرداخت شده',color:'text-ok',bg:'bg-ok/10',icon:'fa-check-circle'},
+        sent:{label:'ارسال شده',color:'text-gold',bg:'bg-gold/10',icon:'fa-truck'},
+    };
 
-        // گوش دادن آنلاین به تغییرات دیتابیس
-        database.ref('orders').on('value', (snapshot) => {
-            ordersList.innerHTML = '';
-            const data = snapshot.val();
-            
-            if (!data) {
-                ordersList.innerHTML = 'هنوز سفارشی ثبت نشده است.';
-                return;
-            }
+    // ===================== حالت =====================
+    let menuItems = [];
+    let orders = [];
+    let settings = {restaurantName:'کافه دمو',password:'km12345678'};
+    let editId = null;
+    let delId = null;
+    let orderFilter = 'all';
 
-            Object.keys(data).reverse().forEach(key => {
-                const order = data[key];
-                ordersList.innerHTML += `
-                    <div class="order-box">
-                        <h3>میز شماره: ${order.table}</h3>
-                        <p>سفارش: <strong>${order.item}</strong></p>
-                        <small>زمان: ${order.time}</small>
-                    </div>
-                `;
-            });
+    // ===================== راه‌اندازی =====================
+    async function init() {
+        await seedIfNeeded();
+        settings = (await db.collection('settings').doc('admin').get()).data() || settings;
+        document.getElementById('adminTitle').textContent = settings.restaurantName + ' — پنل مدیریت';
+        document.title = settings.restaurantName + ' — پنل مدیریت';
+
+        // لیستنر آیتم‌ها
+        db.collection('menuItems').orderBy('createdAt','asc').onSnapshot(snap => {
+            menuItems = snap.docs.map(d => ({id:d.id,...d.data()}));
+            renderAdminMenu();
+            renderStats();
         });
+
+        // لیستنر سفارشات
+        db.collection('orders').orderBy('createdAt','desc').onSnapshot(snap => {
+            orders = snap.docs.map(d => ({id:d.id,...d.data()}));
+            renderOrders();
+            renderRecentOrders();
+            renderStats();
+        });
+    }
+
+    async function seedIfNeeded() {
+        const s = await db.collection('menuItems').limit(1).get();
+        if (s.empty) {
+            const batch = db.batch();
+            SEED.forEach(item => batch.set(db.collection('menuItems').doc(), {...item, createdAt:firebase.firestore.FieldValue.serverTimestamp()}));
+            await batch.commit();
+        }
+        const doc = await db.collection('settings').doc('admin').get();
+        if (!doc.exists) await db.collection('settings').doc('admin').set({restaurantName:'کافه دمو',password:'km12345678'});
+    }
+
+    // ===================== ورود / خروج =====================
+    async function handleLogin(e) {
+        e.preventDefault();
+        const pass = document.getElementById('passInput').value;
+        const snap = await db.collection('settings').doc('admin').get();
+        const realPass = snap.exists ? snap.data().password : 'km12345678';
+        if (pass === realPass) {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('adminApp').classList.remove('hidden');
+        } else {
+            toast('رمز عبور اشتباه است','bad');
+            document.getElementById('passInput').value = '';
+            document.getElementById('passInput').focus();
+        }
+    }
+
+    function logout() {
+        document.getElementById('adminApp').classList.add('hidden');
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('passInput').value = '';
+    }
+
+    // ===================== تب‌ها =====================
+    function switchTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+        document.getElementById('tab-'+id).classList.remove('hidden');
+        if(btn) btn.classList.add('on');
+    }
+
+    // ===================== آمار =====================
+    function renderStats() {
+        const total = orders.length;
+        const pending = orders.filter(o=>o.status==='pending').length;
+        const paid = orders.filter(o=>o.status==='paid').length;
+        const revenue = orders.filter(o=>o.status==='paid'||o.status==='sent').reduce((s,o)=>s+o.total,0);
+        const stats = [
+            {label:'کل سفارشات',value:total,icon:'fa-receipt',color:'text-gold'},
+            {label:'در انتظار',value:pending,icon:'fa-clock',color:'text-warn'},
+            {label:'پرداخت شده',value:paid,icon:'fa-check-circle',color:'text-ok'},
+            {label:'درآمد',value:fmtP(revenue),icon:'fa-coins',color:'text-gold'},
+        ];
+        document.getElementById('statsRow').innerHTML = stats.map(s => `
+            <div class="bg-card rounded-xl border border-bdr p-4 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center flex-shrink-0"><i class="fas ${s.icon} ${s.color} text-sm"></i></div>
+                <div><div class="text-lg font-bold text-cream leading-tight">${s.value}</div><div class="text-[10px] text-sand font-medium">${s.label}</div></div>
+            </div>
+        `).join('');
+    }
+
+    // ===================== آخرین سفارشات (داشبورد) =====================
+    function renderRecentOrders() {
+        const box = document.getElementById('recentOrders');
+        const recent = orders.slice(0,5);
+        if (!recent.length) { box.innerHTML = '<p class="text-sand text-sm text-center py-8">سفارشی ثبت نشده</p>'; return; }
+        box.innerHTML = recent.map(o => {
+            const st = STATUS_MAP[o.status]||STATUS_MAP.pending;
+            const time = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'}) : '—';
+            return `<div class="admin-row flex items-center gap-3 p-3 rounded-lg border border-bdr/50">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <span class="text-cream text-sm font-medium">میز ${o.tableNumber}</span>
+                        <span class="${st.bg} ${st.color} text-[10px] font-bold px-2 py-0.5 rounded-full">${st.label}</span>
+                    </div>
+                    <span class="text-sand text-xs">${o.items.map(i=>i.name+' ×'+i.qty).join('، ')} — ${fmtP(o.total)}</span>
+                </div>
+                <span class="text-stone text-xs flex-shrink-0">${time}</span>
+            </div>`;
+        }).join('');
+    }
+
+    // ===================== مدیریت منو =====================
+    function renderAdminMenu() {
+        const box = document.getElementById('adminMenuList');
+        const empty = document.getElementById('emptyMenu');
+        if (!menuItems.length) { box.innerHTML=''; empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+        box.innerHTML = menuItems.map(it => `
+            <div class="admin-row flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg border border-bdr/50">
+                <img src="${it.image||'https://picsum.photos/seed/'+it.id+'/100/100'}" class="w-full sm:w-14 h-20 sm:h-14 object-cover rounded-lg flex-shrink-0 bg-surface" onerror="this.src='https://picsum.photos/seed/fb${it.id}/100/100'">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <h4 class="text-cream text-sm font-medium truncate">${it.name}</h4>
+                        <span class="text-[10px] text-gold bg-gold/10 px-2 py-0.5 rounded-full">${CAT_LABELS[it.category]||it.category}</span>
+                        ${!it.available?'<span class="text-[10px] text-bad bg-bad/10 px-2 py-0.5 rounded-full">قفل</span>':''}
+                    </div>
+                    <p class="text-sand text-xs truncate">${it.description}</p>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <span class="text-gold font-bold text-sm">${fmtP(it.price)}</span>
+                    <div class="toggle-t ${it.available?'on':''}" onclick="toggleAvail('${it.id}')" role="switch" tabindex="0"><div class="thumb"></div></div>
+                    <button onclick="showItemModal('${it.id}')" class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-sand hover:text-gold hover:bg-gold/10 transition" aria-label="ویرایش"><i class="fas fa-pen" style="font-size:11px"></i></button>
+                    <button onclick="showDelModal('${it.id}')" class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-sand hover:text-bad hover:bg-bad/10 transition" aria-label="حذف"><i class="fas fa-trash" style="font-size:11px"></i></button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function toggleAvail(id) {
+        const it = menuItems.find(i=>i.id===id);
+        if(!it) return;
+        await db.collection('menuItems').doc(id).update({available:!it.available});
+        toast(it.available ? 'آیتم قفل شد' : 'آیتم باز شد', 'info');
+    }
+
+    // ===================== مودال آیتم =====================
+    function showItemModal(id=null) {
+        editId = id;
+        const m = document.getElementById('itemModal');
+        document.getElementById('imgPreview').classList.add('hidden');
+        if (id) {
+            const it = menuItems.find(i=>i.id===id);
+            if(!it) return;
+            document.getElementById('itemModalTitle').textContent = 'ویرایش آیتم';
+            document.getElementById('fName').value = it.name;
+            document.getElementById('fDesc').value = it.description;
+            document.getElementById('fPrice').value = it.price;
+            document.getElementById('fCat').value = it.category;
+            document.getElementById('fImg').value = it.image || '';
+            const t = document.getElementById('fAvail');
+            t.classList.toggle('on', it.available);
+            if(it.image){document.getElementById('imgPreview').src=it.image;document.getElementById('imgPreview').classList.remove('hidden');}
+        } else {
+            document.getElementById('itemModalTitle').textContent = 'افزودن آیتم جدید';
+            document.getElementById('fName').value='';
+            document.getElementById('fDesc').value='';
+            document.getElementById('fPrice').value='';
+            document.getElementById('fCat').value='starters';
+            document.getElementById('fImg').value='';
+            document.getElementById('fAvail').classList.add('on');
+        }
+        m.classList.add('open');
+        setTimeout(()=>document.getElementById('fName').focus(),250);
+    }
+
+    function hideItemModal() { document.getElementById('itemModal').classList.remove('open'); editId=null; }
+
+    async function saveItem(e) {
+        e.preventDefault();
+        const data = {
+            name: document.getElementById('fName').value.trim(),
+            description: document.getElementById('fDesc').value.trim(),
+            price: Number(document.getElementById('fPrice').value),
+            category: document.getElementById('fCat').value,
+            image: document.getElementById('fImg').value.trim(),
+            available: document.getElementById('fAvail').classList.contains('on'),
+        };
+        if(!data.name||!data.description||!data.price){toast('فیلدهای الزامی را پر کنید','bad');return;}
+        try {
+            if (editId) {
+                await db.collection('menuItems').doc(editId).update(data);
+                toast('آیتم بروزرسانی شد','ok');
+            } else {
+                data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                await db.collection('menuItems').add(data);
+                toast('آیتم اضافه شد','ok');
+            }
+            hideItemModal();
+        } catch(err) { toast('خطا در ذخیره‌سازی','bad'); console.error(err); }
+    }
+
+    // ===================== آپلود تصویر =====================
+    function handleUpload(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        if(file.size > 5*1024*1024){toast('حجم فایل بیش از ۵ مگابایت','bad');return;}
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const maxW = 600;
+                const scale = Math.min(1, maxW / img.width);
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                const base64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('fImg').value = base64;
+                document.getElementById('imgPreview').src = base64;
+                document.getElementById('imgPreview').classList.remove('hidden');
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    }
+
+    // ===================== حذف آیتم =====================
+    function showDelModal(id) {
+        delId = id;
+        const it = menuItems.find(i=>i.id===id);
+        document.getElementById('delName').textContent = it ? it.name : '';
+        document.getElementById('delModal').classList.add('open');
+    }
+    function hideDelModal() { document.getElementById('delModal').classList.remove('open'); delId=null; }
+    async function confirmDel() {
+        if(!delId) return;
+        await db.collection('menuItems').doc(delId).delete();
+        hideDelModal();
+        toast('آیتم حذف شد','ok');
+    }
+
+    // ===================== سفارشات =====================
+    function filterOrders(f, btn) {
+        orderFilter = f;
+        document.querySelectorAll('#tab-orders .cat-pill').forEach(b=>b.classList.remove('on'));
+        if(btn) btn.classList.add('on');
+        renderOrders();
+    }
+
+    function renderOrders() {
+        const box = document.getElementById('ordersList');
+        const empty = document.getElementById('emptyOrders');
+        const search = (document.getElementById('orderSearch')?.value || '').trim();
+        let list = orders;
+        if (orderFilter !== 'all') list = list.filter(o => o.status === orderFilter);
+        if (search) list = list.filter(o => String(o.tableNumber).includes(search));
+        if (!list.length) { box.innerHTML=''; empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+
+        box.innerHTML = list.map(o => {
+            const st = STATUS_MAP[o.status]||STATUS_MAP.pending;
+            const date = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleDateString('fa-IR') : '—';
+            const time = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'}) : '—';
+            let actions = '';
+            if (o.status === 'pending') actions = `<button onclick="updateStatus('${o.id}','paid')" class="px-4 py-2 bg-ok text-cream rounded-lg text-xs font-bold hover:opacity-90 transition">تأیید پرداخت</button>`;
+            else if (o.status === 'paid') actions = `<button onclick="updateStatus('${o.id}','sent')" class="px-4 py-2 bg-gold text-base rounded-lg text-xs font-bold hover:opacity-90 transition">ارسال شد</button>`;
+            else actions = `<span class="text-ok text-xs font-medium"><i class="fas fa-check-circle ms-1"></i>تکمیل شده</span>`;
+
+            return `<div class="order-card s-${o.status} bg-card rounded-xl border border-bdr p-4">
+                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-3">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-cream font-bold text-sm">میز ${o.tableNumber}</span>
+                            <span class="${st.bg} ${st.color} text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"><i class="fas ${st.icon}" style="font-size:9px"></i>${st.label}</span>
+                        </div>
+                        <span class="text-stone text-xs">${date} — ${time}</span>
+                    </div>
+                    ${actions}
+                </div>
+                <div class="space-y-1.5 mb-3">
+                    ${o.items.map(it => `<div class="flex items-center justify-between text-sm"><span class="text-sand">${it.name} <span class="text-stone">×${it.qty}</span></span><span class="text-cream text-xs font-medium">${fmtP(it.price*it.qty)}</span></div>`).join('')}
+                </div>
+                <div class="flex items-center justify-between pt-2.5 border-t border-bdr">
+                    <span class="text-sand text-xs">مجموع</span>
+                    <span class="text-gold font-bold">${fmtP(o.total)}</span>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    async function updateStatus(id, status) {
+        const update = {status};
+        if (status === 'paid') update.paidAt = firebase.firestore.FieldValue.serverTimestamp();
+        if (status === 'sent') update.sentAt = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('orders').doc(id).update(update);
+        const label = status === 'paid' ? 'پرداخت شده' : 'ارسال شده';
+        toast('سفارش به وضعیت «' + label + '» تغییر کرد','ok');
+    }
+
+    // ===================== تنظیمات =====================
+    async function saveName() {
+        const name = document.getElementById('setName').value.trim();
+        if(!name){toast('نام را وارد کنید','bad');return;}
+        await db.collection('settings').doc('admin').update({restaurantName:name});
+        settings.restaurantName = name;
+        document.getElementById('adminTitle').textContent = name + ' — پنل مدیریت';
+        document.title = name + ' — پنل مدیریت';
+        toast('نام رستوران بروزرسانی شد','ok');
+    }
+
+    async function savePass() {
+        const pass = document.getElementById('setPass').value.trim();
+        if(!pass||pass.length<4){toast('رمز باید حداقل ۴ کاراکتر باشد','bad');return;}
+        await db.collection('settings').doc('admin').update({password:pass});
+        settings.password = pass;
+        document.getElementById('setPass').value = '';
+        toast('رمز عبور تغییر کرد','ok');
+    }
+
+    // ===================== دانلود JSON =====================
+    function downloadJSON() {
+        const now = new Date().toISOString();
+        const paidOrSent = orders.filter(o=>o.status==='paid'||o.status==='sent');
+        const data = {
+            exportDate: now,
+            exportDatePersian: new Intl.DateTimeFormat('fa-IR',{dateStyle:'full',timeStyle:'short'}).format(new Date()),
+            restaurantName: settings.restaurantName,
+            summary: {
+                totalOrders: orders.length,
+                pendingOrders: orders.filter(o=>o.status==='pending').length,
+                paidOrders: orders.filter(o=>o.status==='paid').length,
+                sentOrders: orders.filter(o=>o.status==='sent').length,
+                totalRevenue: paidOrSent.reduce((s,o)=>s+o.total,0),
+            },
+            orders: orders.map(o => ({
+                id: o.id,
+                tableNumber: o.tableNumber,
+                items: o.items,
+                total: o.total,
+                status: o.status,
+                statusLabel: STATUS_MAP[o.status]?.label || o.status,
+                createdAt: o.createdAt?.toDate?.toISOString() || null,
+                createdAtPersian: o.createdAt?.toDate ? new Intl.DateTimeFormat('fa-IR',{dateStyle:'medium',timeStyle:'short'}).format(o.createdAt.toDate()) : null,
+                paidAt: o.paidAt?.toDate?.toISOString() || null,
+                sentAt: o.sentAt?.toDate?.toISOString() || null,
+            })),
+            menuItems: menuItems.map(m => ({
+                id: m.id,
+                name: m.name,
+                category: m.category,
+                categoryLabel: CAT_LABELS[m.category] || m.category,
+                price: m.price,
+                available: m.available,
+            }))
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `orders_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('فایل JSON دانلود شد','ok');
+    }
+
+    // ===================== ابزارها =====================
+    function fmtP(n) { return Number(n).toLocaleString('fa-IR') + ' تومان'; }
+
+    function toast(msg, type='info') {
+        const colors = {ok:'border-ok bg-ok/10',bad:'border-bad bg-bad/10',info:'border-gold bg-gold/10'};
+        const icons = {ok:'fa-check-circle text-ok',bad:'fa-times-circle text-bad',info:'fa-info-circle text-gold'};
+        const el = document.createElement('div');
+        el.className = `toast-in flex items-center gap-2.5 px-4 py-3 rounded-lg border ${colors[type]||colors.info} backdrop-blur-sm`;
+        el.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i><span class="text-sm text-cream">${msg}</span>`;
+        document.getElementById('toasts').appendChild(el);
+        setTimeout(()=>{el.classList.replace('toast-in','toast-out');setTimeout(()=>el.remove(),250)},3000);
+    }
+
+    // بستن مودال‌ها با Escape و کلیک بیرون
+    document.addEventListener('keydown', e => {
+        if(e.key==='Escape'){
+            if(document.getElementById('delModal').classList.contains('open')) hideDelModal();
+            else if(document.getElementById('itemModal').classList.contains('open')) hideItemModal();
+        }
+    });
+    ['itemModal','delModal'].forEach(id => {
+        document.getElementById(id).addEventListener('click', e => {
+            if(e.target===e.currentTarget){
+                if(id==='itemModal') hideItemModal();
+                else hideDelModal();
+            }
+        });
+    });
+
+    // ===================== شروع =====================
+    init();
     </script>
 </body>
 </html>
