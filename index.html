@@ -1,493 +1,466 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPS Tracker - Live Location</title>
-    
-    <!-- Leaflet CSS for Map -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    
+    <title>کافه دمو — منو</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        base: '#0d0c0a', surface: '#161412', card: '#1e1b17',
+                        'card-h': '#262219', bdr: '#2d2922', gold: '#c8a44e',
+                        'gold-h': '#dbb85a', cream: '#ede5d4', sand: '#a09583',
+                        stone: '#6b6055', ok: '#4caf50', warn: '#ff9800', bad: '#e53935',
+                    },
+                    fontFamily: { fa: ['Vazirmatn','sans-serif'] }
+                }
+            }
+        }
+    </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0a0a;
-            color: #ffffff;
-            min-height: 100vh;
-        }
-        
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #0f3460;
-        }
-        
-        .header h1 {
-            font-size: 1.8rem;
-            background: linear-gradient(90deg, #00d4ff, #00ff88);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #ff4444;
-            animation: pulse 2s infinite;
-        }
-        
-        .status-dot.online {
-            background: #00ff88;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        /* Main Content */
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 20px;
-            padding: 20px;
-            height: calc(100vh - 80px);
-        }
-        
-        /* Map Container */
-        .map-container {
-            border-radius: 15px;
-            overflow: hidden;
-            border: 2px solid #1a1a2e;
-            position: relative;
-        }
-        
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-        
-        /* Info Panel */
-        .info-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-        }
-        
-        .info-card {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border-radius: 15px;
-            padding: 20px;
-            border: 1px solid #0f3460;
-        }
-        
-        .info-card h3 {
-            color: #00d4ff;
-            margin-bottom: 15px;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .info-row:last-child {
-            border-bottom: none;
-        }
-        
-        .info-label {
-            color: #888;
-            font-size: 0.9rem;
-        }
-        
-        .info-value {
-            color: #fff;
-            font-weight: 600;
-            font-family: 'Courier New', monospace;
-        }
-        
-        /* History List */
-        .history-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .history-item {
-            display: flex;
-            gap: 10px;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-        }
-        
-        .history-time {
-            color: #00d4ff;
-            min-width: 60px;
-        }
-        
-        .history-coords {
-            color: #ccc;
-            font-family: 'Courier New', monospace;
-        }
-        
-        /* Action Buttons */
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #00d4ff, #0088cc);
-            color: white;
-        }
-        
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
-        }
-        
-        /* No Data Message */
-        .no-data {
-            text-align: center;
-            padding: 40px 20px;
-            color: #666;
-        }
-        
-        .no-data .icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-        }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #333;
-            border-radius: 3px;
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-                height: auto;
-            }
-            
-            .map-container {
-                height: 50vh;
-            }
-        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Vazirmatn',sans-serif;background:#0d0c0a;color:#ede5d4;overflow-x:hidden}
+        ::-webkit-scrollbar{width:6px}
+        ::-webkit-scrollbar-track{background:#0d0c0a}
+        ::-webkit-scrollbar-thumb{background:#2d2922;border-radius:3px}
+        .cat-pill{transition:all .25s;border:1px solid #2d2922;background:transparent;color:#a09583;white-space:nowrap}
+        .cat-pill:hover{border-color:#c8a44e;color:#ede5d4}
+        .cat-pill.on{background:#c8a44e;color:#0d0c0a;border-color:#c8a44e;font-weight:700}
+        .food-card{opacity:0;transform:translateY(24px);transition:opacity .45s,transform .45s,box-shadow .3s}
+        .food-card.vis{opacity:1;transform:translateY(0)}
+        .food-card:hover{box-shadow:0 8px 32px rgba(200,164,78,.07);transform:translateY(-3px)}
+        .food-card.vis:hover{transform:translateY(-3px)}
+        .food-card.locked{opacity:.45;filter:grayscale(.5);pointer-events:none}
+        .panel-slide{transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+        .panel-slide.open{transform:translateX(0)}
+        .entry-glow{background:radial-gradient(ellipse at 50% 40%,rgba(200,164,78,.1) 0%,transparent 65%),#0d0c0a}
+        .badge-pop{animation:pop .3s ease}
+        @keyframes pop{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
+        .toast-in{animation:toastIn .35s ease forwards}
+        .toast-out{animation:toastOut .25s ease forwards}
+        @keyframes toastIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+        @keyframes toastOut{from{opacity:1}to{transform:translateY(-10px);opacity:0}}
+        .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
     </style>
 </head>
 <body>
-    <header class="header">
-        <h1>📍 GPS Tracker</h1>
-        <div class="status-badge">
-            <div class="status-dot" id="statusDot"></div>
-            <span id="statusText">Connecting...</span>
-        </div>
-    </header>
-    
-    <main class="main-content">
-        <!-- Map -->
-        <div class="map-container">
-            <div id="map"></div>
-        </div>
-        
-        <!-- Info Panel -->
-        <div class="info-panel">
-            <!-- Current Location -->
-            <div class="info-card">
-                <h3>🎯 Current Location</h3>
-                <div id="locationInfo">
-                    <div class="no-data">
-                        <div class="icon">📡</div>
-                        <p>Waiting for GPS data...</p>
-                    </div>
-                </div>
+    <!-- ===== صفحه ورود شماره میز ===== -->
+    <div id="entryScreen" class="fixed inset-0 z-50 entry-glow flex items-center justify-center p-4">
+        <div class="text-center max-w-sm w-full">
+            <div class="w-20 h-20 rounded-full border-2 border-gold/30 flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-utensils text-gold text-2xl"></i>
             </div>
-            
-            <!-- GPS Stats -->
-            <div class="info-card">
-                <h3>📊 GPS Stats</h3>
-                <div id="gpsStats">
-                    <div class="no-data">
-                        <div class="icon">🛰️</div>
-                        <p>No satellite data yet</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Actions -->
-            <div class="action-buttons">
-                <button class="btn btn-primary" onclick="centerOnMarker()">Center Map</button>
-                <button class="btn btn-secondary" onclick="clearHistory()">Clear Path</button>
-            </div>
-            
-            <!-- Location History -->
-            <div class="info-card">
-                <h3>📜 Recent Updates</h3>
-                <div class="history-list" id="historyList">
-                    <div class="no-data">
-                        <p>History will appear here</p>
-                    </div>
-                </div>
+            <h1 id="entryTitle" class="text-3xl font-black text-cream mb-2">کافه دمو</h1>
+            <p class="text-sand text-sm mb-8">لطفا شماره میز خود را وارد کنید</p>
+            <div class="bg-card rounded-xl border border-bdr p-6">
+                <label class="text-xs text-sand font-medium block mb-2">شماره میز</label>
+                <input type="number" id="tableInput" min="1" max="999" class="w-full bg-surface border border-bdr rounded-lg px-4 py-3 text-cream text-center text-xl font-bold outline-none focus:border-gold transition mb-4" placeholder="مثلا ۵" autofocus>
+                <button onclick="enterTable()" class="w-full py-3 bg-gold text-base font-bold rounded-lg hover:bg-gold-h transition text-sm">ورود به منو</button>
             </div>
         </div>
-    </main>
-    
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
+    </div>
+
+    <!-- ===== اپلیکیشن اصلی ===== -->
+    <div id="appScreen" class="hidden">
+        <!-- هدر -->
+        <header class="fixed top-0 inset-x-0 z-40 bg-base/80 backdrop-blur-xl border-b border-bdr/50">
+            <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+                <h2 id="headerTitle" class="font-bold text-cream text-sm">کافه دمو</h2>
+                <div class="flex items-center gap-2">
+                    <span id="tableBadge" class="bg-gold/15 text-gold text-xs font-bold px-3 py-1 rounded-full">میز —</span>
+                    <button onclick="toggleStatus()" class="w-9 h-9 rounded-lg bg-surface flex items-center justify-center text-sand hover:text-gold transition" title="وضعیت سفارشات" aria-label="وضعیت سفارشات">
+                        <i class="fas fa-receipt text-sm"></i>
+                    </button>
+                    <button onclick="toggleCart()" class="relative w-9 h-9 rounded-lg bg-surface flex items-center justify-center text-sand hover:text-gold transition" title="سبد خرید" aria-label="سبد خرید">
+                        <i class="fas fa-shopping-bag text-sm"></i>
+                        <span id="cartBadge" class="hidden absolute -top-1 -start-1 w-5 h-5 bg-gold text-base text-xs font-black rounded-full flex items-center justify-center badge-pop">0</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- دسته‌بندی‌ها -->
+        <div class="fixed top-14 inset-x-0 z-30 bg-base/90 backdrop-blur-lg border-b border-bdr/30">
+            <div id="catBar" class="max-w-5xl mx-auto px-4 py-3 flex gap-2 overflow-x-auto"></div>
+        </div>
+
+        <!-- گرید منو -->
+        <main class="max-w-5xl mx-auto px-4 pt-32 pb-28">
+            <div id="menuGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            <div id="emptyMsg" class="hidden text-center py-20">
+                <i class="fas fa-utensils text-4xl text-stone mb-3 block"></i>
+                <p class="text-sand">آیتمی در این دسته‌بندی یافت نشد</p>
+            </div>
+        </main>
+
+        <!-- دکمه سبد شناور -->
+        <button id="cartFab" onclick="toggleCart()" class="hidden fixed bottom-6 start-6 z-30 w-14 h-14 bg-gold text-base rounded-full shadow-lg shadow-gold/20 flex items-center justify-center hover:bg-gold-h transition-all active:scale-95">
+            <i class="fas fa-shopping-bag text-lg"></i>
+            <span id="fabBadge" class="absolute -top-1 -start-1 w-6 h-6 bg-bad text-cream text-xs font-black rounded-full flex items-center justify-center">0</span>
+        </button>
+    </div>
+
+    <!-- ===== پنل سبد خرید ===== -->
+    <div id="cartOverlay" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/60" onclick="toggleCart()"></div>
+        <div id="cartPanel" class="panel-slide absolute top-0 start-0 bottom-0 w-full max-w-sm bg-card border-e border-bdr flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-bdr">
+                <h3 class="font-bold text-cream">سبد خرید</h3>
+                <button onclick="toggleCart()" class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-sand hover:text-cream transition"><i class="fas fa-times text-sm"></i></button>
+            </div>
+            <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+            <div id="cartFooter" class="hidden border-t border-bdr p-4 space-y-3">
+                <div class="flex items-center justify-between text-lg font-bold">
+                    <span class="text-sand">مجموع</span>
+                    <span id="cartTotal" class="text-gold"></span>
+                </div>
+                <button onclick="placeOrder()" class="w-full py-3 bg-gold text-base font-bold rounded-lg hover:bg-gold-h transition text-sm">ثبت سفارش</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== پنل وضعیت سفارشات ===== -->
+    <div id="statusOverlay" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/60" onclick="toggleStatus()"></div>
+        <div id="statusPanel" class="panel-slide absolute top-0 start-0 bottom-0 w-full max-w-sm bg-card border-e border-bdr flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b border-bdr">
+                <h3 class="font-bold text-cream">وضعیت سفارشات</h3>
+                <button onclick="toggleStatus()" class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-sand hover:text-cream transition"><i class="fas fa-times text-sm"></i></button>
+            </div>
+            <div id="statusList" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- تست -->
+    <div id="toasts" class="fixed bottom-4 end-4 z-[200] space-y-2 max-w-xs"></div>
+
     <script>
-        // ============== FIREBASE CONFIGURATION ==============
-        // REPLACE WITH YOUR FIREBASE CONFIG
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+    // ===================== فایربیس =====================
+    const firebaseConfig = {
+        apiKey: "AIzaSyBg0db4HZtFPMp7nbnQLsLhsgWov3Lw7v0",
+        authDomain: "cafe-demo-36532.firebaseapp.com",
+        projectId: "cafe-demo-36532",
+        storageBucket: "cafe-demo-36532.firebasestorage.app",
+        messagingSenderId: "139708235074",
+        appId: "1:139708235074:web:0421f58c576b0f48149cdb"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // ===================== ثابت‌ها =====================
+    const CATS = [
+        {id:'all',label:'همه',icon:'fa-grip'},
+        {id:'starters',label:'پیش‌غذا',icon:'fa-seedling'},
+        {id:'mains',label:'غذای اصلی',icon:'fa-plate-wheat'},
+        {id:'desserts',label:'دسر',icon:'fa-cake-candles'},
+        {id:'drinks',label:'نوشیدنی',icon:'fa-wine-glass'},
+    ];
+    const SEED = [
+        {name:'سالاد سزار',description:'کاهو رومی، پنیر پارمزان، نان تست و سس مخصوص',price:65000,category:'starters',image:'https://picsum.photos/seed/caesar88/400/300',available:true},
+        {name:'سوپ جو',description:'سوپ گرم جو با سبزیجات تازه و لیمو',price:45000,category:'starters',image:'https://picsum.photos/seed/soup44/400/300',available:true},
+        {name:'ماست و خیار',description:'ماست محلی با خیار، نعناع و گردو',price:35000,category:'starters',image:'https://picsum.photos/seed/mastkhiar7/400/300',available:true},
+        {name:'کباب کوبیده',description:'دو سیخ کباب کوبیده مخصوص با گوجه کبابی و برنج ایرانی',price:185000,category:'mains',image:'https://picsum.photos/seed/kabab22/400/300',available:true},
+        {name:'جوجه کباب',description:'سینه مرغ مرینیت شده با زعفران، گریل شده با برنج و گوجه',price:165000,category:'mains',image:'https://picsum.photos/seed/joojeh33/400/300',available:true},
+        {name:'قرمه‌سبزی',description:'خورشت قرمه‌سبزی اصیل ایرانی با لوبیا قرمز و برنج',price:145000,category:'mains',image:'https://picsum.photos/seed/ghormeh11/400/300',available:true},
+        {name:'زرشک پلو با مرغ',description:'برنج زعفرینی با زرشک و ران مرغ',price:155000,category:'mains',image:'https://picsum.photos/seed/zereshk55/400/300',available:false},
+        {name:'باقلوا',description:'باقلوا پسته و بادام تبریزی',price:55000,category:'desserts',image:'https://picsum.photos/seed/baklava77/400/300',available:true},
+        {name:'فرنی',description:'فرنی سنتی با گلاب و پسته',price:35000,category:'desserts',image:'https://picsum.photos/seed/freni66/400/300',available:true},
+        {name:'دوغ',description:'دوغ محلی با نعناع و پونه',price:15000,category:'drinks',image:'https://picsum.photos/seed/doogh99/400/300',available:true},
+        {name:'شربت بهارنارنج',description:'شربت خنک بهارنارنج با عرق نعناع',price:25000,category:'drinks',image:'https://picsum.photos/seed/sharbat12/400/300',available:true},
+        {name:'چای دم‌کرده',description:'چای ایرانی دم‌کرده با نبات و لیمو عمانی',price:20000,category:'drinks',image:'https://picsum.photos/seed/chai34/400/300',available:true},
+    ];
+
+    // ===================== حالت =====================
+    let tableNum = '';
+    let items = [];
+    let cart = [];
+    let activeCat = 'all';
+    let cartOpen = false;
+    let statusOpen = false;
+    let ordersUnsub = null;
+
+    // ===================== راه‌اندازی =====================
+    async function init() {
+        await seedIfNeeded();
+        const saved = sessionStorage.getItem('tableNum');
+        if (saved) {
+            tableNum = saved;
+            showApp();
+        }
+        document.getElementById('tableInput').addEventListener('keydown', e => { if(e.key==='Enter') enterTable(); });
+    }
+
+    async function seedIfNeeded() {
+        const s = await db.collection('menuItems').limit(1).get();
+        if (s.empty) {
+            const batch = db.batch();
+            SEED.forEach(item => {
+                batch.set(db.collection('menuItems').doc(), {...item, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+            });
+            await batch.commit();
+        }
+        const doc = await db.collection('settings').doc('admin').get();
+        if (!doc.exists) {
+            await db.collection('settings').doc('admin').set({restaurantName:'کافه دمو', password:'km12345678'});
+        }
+    }
+
+    // ===================== ورود میز =====================
+    function enterTable() {
+        const v = document.getElementById('tableInput').value.trim();
+        if (!v || v < 1) { toast('شماره میز را وارد کنید','bad'); return; }
+        tableNum = v;
+        sessionStorage.setItem('tableNum', v);
+        showApp();
+    }
+
+    function showApp() {
+        document.getElementById('entryScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.remove('hidden');
+        document.getElementById('tableBadge').textContent = 'میز ' + tableNum;
+        loadSettings();
+        loadMenu();
+        listenOrders();
+    }
+
+    async function loadSettings() {
+        const doc = await db.collection('settings').doc('admin').get();
+        if (doc.exists) {
+            const name = doc.data().restaurantName || 'کافه دمو';
+            document.getElementById('entryTitle').textContent = name;
+            document.getElementById('headerTitle').textContent = name;
+            document.title = name + ' — منو';
+        }
+    }
+
+    // ===================== بارگذاری منو =====================
+    function loadMenu() {
+        db.collection('menuItems').orderBy('createdAt','asc').onSnapshot(snap => {
+            items = snap.docs.map(d => ({id:d.id, ...d.data()}));
+            renderCats();
+            renderGrid();
+        });
+    }
+
+    function renderCats() {
+        document.getElementById('catBar').innerHTML = CATS.map(c =>
+            `<button class="cat-pill px-4 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 ${activeCat===c.id?'on':''}" onclick="setCat('${c.id}')"><i class="fas ${c.icon}" style="font-size:10px"></i>${c.label}</button>`
+        ).join('');
+    }
+
+    function setCat(id) { activeCat = id; renderCats(); renderGrid(); }
+
+    function renderGrid() {
+        const grid = document.getElementById('menuGrid');
+        const empty = document.getElementById('emptyMsg');
+        const list = activeCat === 'all' ? items : items.filter(i => i.category === activeCat);
+        if (!list.length) { grid.innerHTML=''; empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+        grid.innerHTML = list.map((it,i) => `
+            <div class="food-card rounded-xl border border-bdr overflow-hidden bg-card ${!it.available?'locked':''}" style="transition-delay:${i*50}ms">
+                <div class="relative h-40 overflow-hidden bg-surface">
+                    <img src="${it.image||'https://picsum.photos/seed/'+it.id+'/400/300'}" alt="${it.name}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110" onerror="this.src='https://picsum.photos/seed/fb${i}/400/300'">
+                    <span class="absolute top-2.5 start-2.5 bg-base/70 backdrop-blur-sm text-gold text-[10px] font-bold px-2 py-0.5 rounded-full">${CATS.find(c=>c.id===it.category)?.label||''}</span>
+                    ${!it.available?'<div class="absolute inset-0 bg-base/50 flex items-center justify-center"><span class="bg-base/80 text-sand px-3 py-1 rounded-full text-xs font-bold">ناموجود</span></div>':''}
+                </div>
+                <div class="p-4">
+                    <div class="flex items-start justify-between gap-2 mb-1.5">
+                        <h3 class="font-bold text-cream text-sm leading-relaxed">${it.name}</h3>
+                        <span class="text-gold font-bold text-sm whitespace-nowrap">${fmtP(it.price)}</span>
+                    </div>
+                    <p class="text-sand text-xs leading-relaxed line-clamp-2 mb-3">${it.description}</p>
+                    ${it.available?`<button onclick="addToCart('${it.id}')" class="w-full py-2 bg-gold/10 text-gold text-xs font-bold rounded-lg hover:bg-gold/20 transition flex items-center justify-center gap-1.5"><i class="fas fa-plus text-[10px]"></i>افزودن</button>`:''}
+                </div>
+            </div>
+        `).join('');
+        requestAnimationFrame(() => {
+            const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){e.target.classList.add('vis');obs.unobserve(e.target)} }), {threshold:.08, rootMargin:'0px 0px -20px 0px'});
+            grid.querySelectorAll('.food-card').forEach(c => obs.observe(c));
+        });
+    }
+
+    // ===================== سبد خرید =====================
+    function addToCart(id) {
+        const it = items.find(i => i.id === id);
+        if (!it) return;
+        const existing = cart.find(c => c.id === id);
+        if (existing) existing.qty++;
+        else cart.push({...it, qty:1});
+        saveCart();
+        updateCartUI();
+        toast(it.name + ' به سبد اضافه شد', 'ok');
+    }
+
+    function changeQty(id, delta) {
+        const c = cart.find(c => c.id === id);
+        if (!c) return;
+        c.qty += delta;
+        if (c.qty <= 0) cart = cart.filter(c => c.id !== id);
+        saveCart();
+        updateCartUI();
+        renderCartItems();
+    }
+
+    function saveCart() { sessionStorage.setItem('cart_'+tableNum, JSON.stringify(cart)); }
+
+    function loadCart() {
+        const saved = sessionStorage.getItem('cart_'+tableNum);
+        cart = saved ? JSON.parse(saved) : [];
+        updateCartUI();
+    }
+
+    function updateCartUI() {
+        const count = cart.reduce((s,c) => s+c.qty, 0);
+        const fab = document.getElementById('cartFab');
+        const badge = document.getElementById('cartBadge');
+        const fabBadge = document.getElementById('fabBadge');
+        if (count > 0) {
+            fab.classList.remove('hidden');
+            badge.classList.remove('hidden');
+            badge.textContent = count;
+            fabBadge.textContent = count;
+        } else {
+            fab.classList.add('hidden');
+            badge.classList.add('hidden');
+        }
+    }
+
+    function toggleCart() {
+        cartOpen = !cartOpen;
+        const ov = document.getElementById('cartOverlay');
+        const pn = document.getElementById('cartPanel');
+        if (cartOpen) { ov.classList.remove('hidden'); loadCart(); renderCartItems(); requestAnimationFrame(()=>pn.classList.add('open')); }
+        else { pn.classList.remove('open'); setTimeout(()=>ov.classList.add('hidden'),350); }
+    }
+
+    function renderCartItems() {
+        const box = document.getElementById('cartItems');
+        const foot = document.getElementById('cartFooter');
+        if (!cart.length) {
+            box.innerHTML = '<div class="text-center py-12"><i class="fas fa-shopping-bag text-3xl text-stone mb-3 block"></i><p class="text-sand text-sm">سبد خرید خالی است</p></div>';
+            foot.classList.add('hidden');
+            return;
+        }
+        foot.classList.remove('hidden');
+        let total = 0;
+        box.innerHTML = cart.map(c => {
+            const sub = c.price * c.qty;
+            total += sub;
+            return `<div class="flex items-center gap-3 bg-surface rounded-lg p-3">
+                <img src="${c.image||'https://picsum.photos/seed/'+c.id+'/100/100'}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" onerror="this.src='https://picsum.photos/seed/fb${c.id}/100/100'">
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-cream text-sm font-medium truncate">${c.name}</h4>
+                    <span class="text-gold text-xs font-bold">${fmtP(c.price)}</span>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <button onclick="changeQty('${c.id}',-1)" class="w-7 h-7 rounded bg-card flex items-center justify-center text-sand hover:text-cream transition text-xs"><i class="fas fa-minus"></i></button>
+                    <span class="text-cream text-sm font-bold w-5 text-center">${c.qty}</span>
+                    <button onclick="changeQty('${c.id}',1)" class="w-7 h-7 rounded bg-card flex items-center justify-center text-sand hover:text-cream transition text-xs"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>`;
+        }).join('');
+        document.getElementById('cartTotal').textContent = fmtP(total);
+    }
+
+    // ===================== ثبت سفارش =====================
+    async function placeOrder() {
+        if (!cart.length) return;
+        const total = cart.reduce((s,c) => s + c.price * c.qty, 0);
+        const orderItems = cart.map(c => ({name:c.name, price:c.price, qty:c.qty, itemId:c.id}));
+        try {
+            await db.collection('orders').add({
+                tableNumber: tableNum,
+                items: orderItems,
+                total: total,
+                status: 'pending',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                paidAt: null,
+                sentAt: null
+            });
+            cart = [];
+            saveCart();
+            updateCartUI();
+            toggleCart();
+            toast('سفارش شما با موفقیت ثبت شد', 'ok');
+        } catch(e) {
+            toast('خطا در ثبت سفارش', 'bad');
+            console.error(e);
+        }
+    }
+
+    // ===================== وضعیت سفارشات =====================
+    function listenOrders() {
+        if (ordersUnsub) ordersUnsub();
+        ordersUnsub = db.collection('orders')
+            .where('tableNumber','==', tableNum)
+            .orderBy('createdAt','desc')
+            .onSnapshot(snap => {
+                const orders = snap.docs.map(d => ({id:d.id,...d.data()}));
+                renderStatus(orders);
+            });
+    }
+
+    function renderStatus(orders) {
+        const box = document.getElementById('statusList');
+        if (!orders.length) {
+            box.innerHTML = '<div class="text-center py-12"><i class="fas fa-receipt text-3xl text-stone mb-3 block"></i><p class="text-sand text-sm">سفارشی ثبت نشده است</p></div>';
+            return;
+        }
+        const statusMap = {
+            pending: {label:'در انتظار پرداخت', color:'bg-warn', icon:'fa-clock'},
+            paid: {label:'پرداخت شده', color:'bg-ok', icon:'fa-check'},
+            sent: {label:'ارسال شده', color:'bg-gold', icon:'fa-truck'}
         };
-        
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        
-        // ============== MAP SETUP ==============
-        const map = L.map('map').setView([0, 0], 2);
-        
-        // Dark map tiles
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '© OpenStreetMap contributors © CARTO',
-            maxZoom: 19
-        }).addTo(map);
-        
-        // Custom marker icon
-        const markerIcon = L.divIcon({
-            html: `<div style="
-                width: 20px;
-                height: 20px;
-                background: #00d4ff;
-                border: 3px solid white;
-                border-radius: 50%;
-                box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
-            "></div>`,
-            className: '',
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
-        });
-        
-        let marker = null;
-        let pathLine = null;
-        let pathCoords = [];
-        let lastLocation = null;
-        
-        // ============== LISTEN TO FIREBASE ==============
-        const locationRef = database.ref('/gps_tracker/current');
-        
-        locationRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            
-            if (data && data.latitude && data.longitude) {
-                updateStatus(true);
-                updateLocation(data);
-                updateStats(data);
-                addToHistory(data);
-            } else {
-                updateStatus(false);
-            }
-        }, (error) => {
-            console.error("Firebase error:", error);
-            updateStatus(false);
-            document.getElementById('statusText').textContent = "Connection Error";
-        });
-        
-        // ============== UPDATE FUNCTIONS ==============
-        function updateStatus(online) {
-            const dot = document.getElementById('statusDot');
-            const text = document.getElementById('statusText');
-            
-            if (online) {
-                dot.classList.add('online');
-                text.textContent = "Live";
-            } else {
-                dot.classList.remove('online');
-                text.textContent = "Offline";
-            }
-        }
-        
-        function updateLocation(data) {
-            const lat = data.latitude;
-            const lng = data.longitude;
-            
-            // Update info panel
-            document.getElementById('locationInfo').innerHTML = `
-                <div class="info-row">
-                    <span class="info-label">Latitude</span>
-                    <span class="info-value">${lat.toFixed(6)}</span>
+        box.innerHTML = orders.map(o => {
+            const st = statusMap[o.status] || statusMap.pending;
+            const time = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'}) : '—';
+            return `<div class="bg-surface rounded-xl p-4 border border-bdr">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs text-sand">${time}</span>
+                    <span class="${st.color} text-base text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"><i class="fas ${st.icon}" style="font-size:9px"></i>${st.label}</span>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Longitude</span>
-                    <span class="info-value">${lng.toFixed(6)}</span>
+                <div class="space-y-1.5 mb-3">
+                    ${o.items.map(it => `<div class="flex items-center justify-between text-sm"><span class="text-cream">${it.name} <span class="text-sand">×${it.qty}</span></span><span class="text-gold text-xs font-medium">${fmtP(it.price * it.qty)}</span></div>`).join('')}
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Google Maps</span>
-                    <a href="https://www.google.com/maps?q=${lat},${lng}" 
-                       target="_blank" style="color: #00d4ff; text-decoration: none;">Open →</a>
+                <div class="flex items-center justify-between pt-2 border-t border-bdr">
+                    <span class="text-sand text-xs">مجموع</span>
+                    <span class="text-gold font-bold">${fmtP(o.total)}</span>
                 </div>
-            `;
-            
-            // Update map marker
-            if (marker) {
-                marker.setLatLng([lat, lng]);
-            } else {
-                marker = L.marker([lat, lng], { icon: markerIcon }).addTo(map);
-            }
-            
-            // Add to path
-            pathCoords.push([lat, lng]);
-            
-            if (pathLine) {
-                pathLine.setLatLngs(pathCoords);
-            } else {
-                pathLine = L.polyline(pathCoords, {
-                    color: '#00d4ff',
-                    weight: 3,
-                    opacity: 0.7
-                }).addTo(map);
-            }
-            
-            // Center map on first location
-            if (!lastLocation) {
-                map.setView([lat, lng], 15);
-            }
-            
-            lastLocation = [lat, lng];
-        }
-        
-        function updateStats(data) {
-            const statsHtml = `
-                <div class="info-row">
-                    <span class="info-label">Speed</span>
-                    <span class="info-value">${data.speed || 0} km/h</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Altitude</span>
-                    <span class="info-value">${data.altitude || 0} m</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Satellites</span>
-                    <span class="info-value">${data.satellites || 0}</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">HDOP</span>
-                    <span class="info-value">${data.hdop || '-'}</span>
-                </div>
-            `;
-            document.getElementById('gpsStats').innerHTML = statsHtml;
-        }
-        
-        function addToHistory(data) {
-            const historyList = document.getElementById('historyList');
-            const now = new Date();
-            const time = now.toLocaleTimeString();
-            
-            // Remove "no data" message if present
-            const noData = historyList.querySelector('.no-data');
-            if (noData) noData.remove();
-            
-            // Add new item at top
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            item.innerHTML = `
-                <span class="history-time">${time}</span>
-                <span class="history-coords">${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}</span>
-            `;
-            
-            historyList.insertBefore(item, historyList.firstChild);
-            
-            // Keep only last 20 items
-            while (historyList.children.length > 20) {
-                historyList.removeChild(historyList.lastChild);
-            }
-        }
-        
-        // ============== MAP ACTIONS ==============
-        function centerOnMarker() {
-            if (lastLocation) {
-                map.setView(lastLocation, 15);
-            }
-        }
-        
-        function clearHistory() {
-            pathCoords = [];
-            if (pathLine) {
-                map.removeLayer(pathLine);
-                pathLine = null;
-            }
-            if (marker) {
-                map.removeLayer(marker);
-                marker = null;
-            }
-            lastLocation = null;
-        }
+            </div>`;
+        }).join('');
+    }
+
+    function toggleStatus() {
+        statusOpen = !statusOpen;
+        const ov = document.getElementById('statusOverlay');
+        const pn = document.getElementById('statusPanel');
+        if (statusOpen) { ov.classList.remove('hidden'); requestAnimationFrame(()=>pn.classList.add('open')); }
+        else { pn.classList.remove('open'); setTimeout(()=>ov.classList.add('hidden'),350); }
+    }
+
+    // ===================== ابزارها =====================
+    function fmtP(n) { return Number(n).toLocaleString('fa-IR') + ' تومان'; }
+
+    function toast(msg, type='info') {
+        const colors = {ok:'border-ok bg-ok/10',bad:'border-bad bg-bad/10',info:'border-gold bg-gold/10'};
+        const icons = {ok:'fa-check-circle text-ok',bad:'fa-times-circle text-bad',info:'fa-info-circle text-gold'};
+        const el = document.createElement('div');
+        el.className = `toast-in flex items-center gap-2.5 px-4 py-3 rounded-lg border ${colors[type]||colors.info} backdrop-blur-sm`;
+        el.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i><span class="text-sm text-cream">${msg}</span>`;
+        document.getElementById('toasts').appendChild(el);
+        setTimeout(() => { el.classList.replace('toast-in','toast-out'); setTimeout(()=>el.remove(),250); }, 3000);
+    }
+
+    // ===================== شروع =====================
+    init();
     </script>
 </body>
 </html>
