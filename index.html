@@ -3,68 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منوی کافه</title>
+    <title>منوی کافه مهر</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        body { font-family: Tahoma, sans-serif; background: #f9f9f9; margin: 0; padding: 20px; color: #333; }
-        h1, h2 { text-align: center; color: #4a3b32; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="number"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        .menu-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .menu-item span { font-size: 16px; }
-        button { background: #5c4033; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; width: 100%; margin-top: 20px; }
-        button:hover { background: #4a3b32; }
-        .success-msg { color: green; text-align: center; display: none; margin-top: 15px; font-weight: bold; }
+        :root {
+            --bg: #141210;
+            --surface: #1c1915;
+            --surface2: #252119;
+            --surface3: #302a22;
+            --accent: #c8956c;
+            --accent-hover: #daa882;
+            --accent-dim: rgba(200,149,108,0.12);
+            --fg: #ede6dd;
+            --fg2: #b0a899;
+            --muted: #736b60;
+            --success: #4caf50;
+            --danger: #e53935;
+            --border: #332d25;
+            --radius: 12px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
+        body::before {
+            content: '';
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at 30% 10%, rgba(200,149,108,0.06) 0%, transparent 60%),
+                        radial-gradient(ellipse at 70% 90%, rgba(200,149,108,0.03) 0%, transparent 50%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .status-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 8px 16px; font-size: 12px; text-align: center;
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--muted); transition: background 0.3s;
+        }
+        .status-dot.connected { background: var(--success); box-shadow: 0 0 6px rgba(76,175,80,0.5); }
+        .status-dot.error { background: var(--danger); }
+
+        header {
+            position: relative; z-index: 1;
+            text-align: center; padding: 60px 20px 20px;
+        }
+        header h1 {
+            font-size: 28px; font-weight: 900; margin-bottom: 4px;
+        }
+        header h1 i { color: var(--accent); margin-left: 10px; }
+        header p { color: var(--muted); font-size: 14px; }
+
+        .main-container {
+            position: relative; z-index: 1;
+            max-width: 600px; margin: 0 auto; padding: 0 16px;
+        }
+
+        .form-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px; margin-bottom: 20px;
+        }
+        .form-card label {
+            display: block; font-size: 14px; font-weight: 700;
+            margin-bottom: 8px; color: var(--fg2);
+        }
+        .form-card input[type="number"] {
+            width: 100%; padding: 14px 16px;
+            background: var(--surface2); border: 1.5px solid var(--border);
+            border-radius: 8px; color: var(--fg);
+            font-family: inherit; font-size: 18px; font-weight: 700;
+            text-align: center; outline: none;
+            transition: border-color 0.2s;
+            -moz-appearance: textfield;
+        }
+        .form-card input[type="number"]::-webkit-outer-spin-button,
+        .form-card input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none; margin: 0;
+        }
+        .form-card input:focus { border-color: var(--accent); }
+
+        .section-title {
+            font-size: 18px; font-weight: 800; margin-bottom: 14px;
+            padding-bottom: 10px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .section-title i { color: var(--accent); font-size: 16px; }
+
+        .menu-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 0; border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+        .menu-item:last-child { border-bottom: none; }
+        .menu-item-info { flex: 1; }
+        .menu-item-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+        .menu-item-price { font-size: 13px; color: var(--accent); font-weight: 600; }
+        .qty-box {
+            display: flex; align-items: center; gap: 0;
+            background: var(--surface2); border-radius: 8px;
+            overflow: hidden; border: 1px solid var(--border);
+        }
+        .qty-box button {
+            width: 36px; height: 36px; border: none;
+            background: transparent; color: var(--fg2);
+            font-size: 18px; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-family: inherit; transition: all 0.15s;
+        }
+        .qty-box button:hover { background: var(--surface3); color: var(--fg); }
+        .qty-box input {
+            width: 40px; height: 36px; border: none;
+            background: transparent; color: var(--fg);
+            text-align: center; font-family: inherit;
+            font-size: 15px; font-weight: 800; outline: none;
+            -moz-appearance: textfield;
+        }
+        .qty-box input::-webkit-outer-spin-button,
+        .qty-box input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        .cart-summary {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px;
+            margin-top: 20px; position: sticky; bottom: 16px;
+        }
+        .cart-row {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 8px; font-size: 14px;
+        }
+        .cart-row.total {
+            font-size: 18px; font-weight: 900;
+            padding-top: 12px; border-top: 1px solid var(--border);
+            margin-top: 4px; margin-bottom: 16px;
+        }
+        .cart-row.total span:last-child { color: var(--accent); }
+
+        .btn-submit {
+            width: 100%; padding: 16px; border: none;
+            background: var(--accent); color: #1a1410;
+            font-family: inherit; font-size: 16px; font-weight: 800;
+            border-radius: 8px; cursor: pointer;
+            transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-submit:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-submit:active { transform: scale(0.98); }
+        .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .success-toast {
+            position: fixed; top: 40px; left: 50%; transform: translateX(-50%) translateY(-20px);
+            background: var(--success); color: #fff; padding: 16px 28px;
+            border-radius: 8px; font-size: 15px; font-weight: 600;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4); z-index: 200;
+            opacity: 0; transition: all 0.4s; pointer-events: none;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .success-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .admin-link {
+            display: block; text-align: center; margin-top: 30px;
+            font-size: 12px; color: var(--muted); opacity: 0.4;
+            text-decoration: none; transition: opacity 0.2s;
+        }
+        .admin-link:hover { opacity: 0.8; }
+
+        @media (max-width: 480px) {
+            header h1 { font-size: 22px; }
+            .menu-item-name { font-size: 14px; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>منوی کافه</h1>
-    
-    <div class="form-group">
-        <label for="tableNumber">شماره میز:</label>
-        <input type="number" id="tableNumber" placeholder="مثلاً ۵" required min="1">
-    </div>
-
-    <h2>آیتم‌های منو</h2>
-    <div id="menu-list">
-        <div class="menu-item">
-            <span>قهوه ترک</span>
-            <span>۴۵,۰۰۰ تومان</span>
-            <input type="number" value="0" min="0" style="width: 60px;" data-name="قهوه ترک" data-price="45000" class="item-qty">
-        </div>
-        <div class="menu-item">
-            <span>لاته</span>
-            <span>۶۵,۰۰۰ تومان</span>
-            <input type="number" value="0" min="0" style="width: 60px;" data-name="لاته" data-price="65000" class="item-qty">
-        </div>
-        <div class="menu-item">
-            <span>چای سیاه</span>
-            <span>۲۵,۰۰۰ تومان</span>
-            <input type="number" value="0" min="0" style="width: 60px;" data-name="چای سیاه" data-price="25000" class="item-qty">
-        </div>
-        <div class="menu-item">
-            <span>کیک شکلاتی</span>
-            <span>۸۰,۰۰۰ تومان</span>
-            <input type="number" value="0" min="0" style="width: 60px;" data-name="کیک شکلاتی" data-price="80000" class="item-qty">
-        </div>
-        <div class="menu-item">
-            <span>باقلوا سنتی</span>
-            <span>۹۰,۰۰۰ تومان</span>
-            <input type="number" value="0" min="0" style="width: 60px;" data-name="باقلوا سنتی" data-price="90000" class="item-qty">
-        </div>
-    </div>
-
-    <button id="submitOrder">ثبت سفارش</button>
-    <div id="successMsg" class="success-msg">سفارش شما با موفقیت ثبت شد!</div>
+<div class="status-bar">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">در حال اتصال به سرور...</span>
 </div>
 
-<!-- کدهای فایربیس که به صورت استاندارد برای وب متصل شده‌اند -->
+<header>
+    <h1><i class="fa-solid fa-mug-saucer"></i>کافه مهر</h1>
+    <p>سفارش خود را ثبت کنید، آماده‌سازی شروع می‌شود</p>
+</header>
+
+<div class="main-container">
+    <div class="form-card">
+        <label for="tableNumber"><i class="fa-solid fa-chair" style="margin-left:6px;color:var(--accent)"></i>شماره میز شما</label>
+        <input type="number" id="tableNumber" placeholder="مثلاً ۵" min="1" max="999">
+    </div>
+
+    <div class="section-title"><i class="fa-solid fa-list"></i>منوی سفارش</div>
+    <div class="form-card" id="menuList"></div>
+
+    <div class="cart-summary" id="cartSummary" style="display:none">
+        <div class="cart-row"><span>تعداد آیتم</span><span id="itemCount">۰</span></div>
+        <div class="cart-row total"><span>جمع کل</span><span id="totalPrice">۰ تومان</span></div>
+        <button class="btn-submit" id="submitBtn" onclick="submitOrder()">
+            <i class="fa-solid fa-paper-plane"></i>
+            ثبت سفارش
+        </button>
+    </div>
+
+    <a class="admin-link" href="admin/index.html">پنل مدیریت</a>
+</div>
+
+<div class="success-toast" id="successToast">
+    <i class="fa-solid fa-circle-check"></i>
+    سفارش با موفقیت ثبت شد!
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBg0db4HZtFPMp7nbnQLsLhsgWov3Lw7v0",
@@ -80,51 +238,158 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    document.getElementById('submitOrder').addEventListener('click', () => {
-        const tableNumber = document.getElementById('tableNumber').value;
-        if (!tableNumber) {
-            alert('لطفاً شماره میز خود را وارد کنید.');
+    // --- آیتم‌های منو ---
+    const menuItems = [
+        { name: 'اسپرسو', price: 45000 },
+        { name: 'لاته', price: 75000 },
+        { name: 'کاپوچینو', price: 75000 },
+        { name: 'موکا', price: 85000 },
+        { name: 'آیس لته', price: 85000 },
+        { name: 'چای ماسالا', price: 45000 },
+        { name: 'دمنوش بابونه', price: 35000 },
+        { name: 'لیموناد تازه', price: 55000 },
+        { name: 'شیک شکلاتی', price: 90000 },
+        { name: 'تیرامیسو', price: 120000 },
+        { name: 'چیزکیک', price: 110000 },
+        { name: 'کروسان', price: 65000 },
+        { name: 'ساندویچ مرغ', price: 145000 },
+        { name: 'سالاد سزار', price: 110000 },
+        { name: 'سیب‌زمینی سرخ‌کرده', price: 65000 },
+    ];
+
+    function toPersian(n) {
+        return String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+    }
+    function formatPrice(p) {
+        return toPersian(p.toLocaleString('en-US')) + ' تومان';
+    }
+
+    // --- رندر منو ---
+    const menuContainer = document.getElementById('menuList');
+    menuContainer.innerHTML = menuItems.map((item, i) => `
+        <div class="menu-item">
+            <div class="menu-item-info">
+                <div class="menu-item-name">${item.name}</div>
+                <div class="menu-item-price">${formatPrice(item.price)}</div>
+            </div>
+            <div class="qty-box">
+                <button onclick="window._changeQty(${i}, 1)">+</button>
+                <input type="number" id="qty-${i}" value="0" min="0" readonly>
+                <button onclick="window._changeQty(${i}, -1)">−</button>
+            </div>
+        </div>
+    `).join('');
+
+    // --- تغییر تعداد ---
+    window._changeQty = function(index, delta) {
+        const input = document.getElementById(`qty-${index}`);
+        let val = parseInt(input.value) || 0;
+        val = Math.max(0, val + delta);
+        input.value = val;
+        updateSummary();
+    };
+
+    // --- بروزرسانی جمع ---
+    function updateSummary() {
+        let count = 0, total = 0;
+        menuItems.forEach((item, i) => {
+            const q = parseInt(document.getElementById(`qty-${i}`).value) || 0;
+            count += q;
+            total += q * item.price;
+        });
+        const summary = document.getElementById('cartSummary');
+        if (count > 0) {
+            summary.style.display = 'block';
+            document.getElementById('itemCount').textContent = toPersian(count);
+            document.getElementById('totalPrice').textContent = formatPrice(total);
+        } else {
+            summary.style.display = 'none';
+        }
+    }
+
+    // --- ثبت سفارش ---
+    window.submitOrder = function() {
+        const tableNum = document.getElementById('tableNumber').value.trim();
+        if (!tableNum || parseInt(tableNum) < 1) {
+            alert('لطفاً شماره میز را وارد کنید');
             return;
         }
 
         let items = [];
         let totalPrice = 0;
-
-        document.querySelectorAll('.item-qty').forEach(input => {
-            const qty = parseInt(input.value);
-            if (qty > 0) {
-                const name = input.getAttribute('data-name');
-                const price = parseInt(input.getAttribute('data-price'));
-                items.push({ name, qty, price: price * qty });
-                totalPrice += price * qty;
+        menuItems.forEach((item, i) => {
+            const q = parseInt(document.getElementById(`qty-${i}`).value) || 0;
+            if (q > 0) {
+                items.push({ name: item.name, qty: q, price: item.price * q });
+                totalPrice += item.price * q;
             }
         });
 
         if (items.length === 0) {
-            alert('لطفاً حداقل یک آیتم انتخاب کنید.');
+            alert('لطفاً حداقل یک آیتم انتخاب کنید');
             return;
         }
 
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ارسال...';
+
         const orderData = {
-            tableNumber: tableNumber,
+            tableNumber: tableNum,
             items: items,
             totalPrice: totalPrice,
             status: 'در انتظار تایید',
             timestamp: Date.now()
         };
 
-        push(ref(db, 'orders'), orderData).then(() => {
-            document.getElementById('successMsg').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('successMsg').style.display = 'none';
-                document.getElementById('tableNumber').value = '';
-                document.querySelectorAll('.item-qty').forEach(input => input.value = 0);
-            }, 3000);
-        }).catch(error => {
-            alert('خطا در ثبت سفارش: ' + error.message);
-        });
-    });
-</script>
+        push(ref(db, 'orders'), orderData)
+            .then(() => {
+                // نمایش پیام موفقیت
+                const toast = document.getElementById('successToast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
 
+                // ریست فرم
+                document.getElementById('tableNumber').value = '';
+                menuItems.forEach((_, i) => { document.getElementById(`qty-${i}`).value = 0; });
+                updateSummary();
+            })
+            .catch(err => {
+                alert('خطا در ثبت سفارش: ' + err.message);
+                console.error('Firebase push error:', err);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ثبت سفارش';
+            });
+    };
+
+    // --- بررسی اتصال ---
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+
+    // تست اتصال با خواندن یک مسیر
+    const connRef = ref(db, '.info/connected');
+    onValue(connRef, (snap) => {
+        if (snap.val() === true) {
+            statusDot.className = 'status-dot connected';
+            statusText.textContent = 'متصل به سرور';
+        } else {
+            statusDot.className = 'status-dot error';
+            statusText.textContent = 'قطع اتصال از سرور';
+        }
+    });
+
+    // تست دسترسی نوشتن با خواندن orders
+    onValue(ref(db, 'orders'), (snap) => {
+        // فقط برای تست اینکه اتصال خواندن هم کار می‌کند
+        console.log('اتصال خواندن سفارشات برقرار است. تعداد:', snap.val() ? Object.keys(snap.val()).length : 0);
+    }, (err) => {
+        statusDot.className = 'status-dot error';
+        statusText.textContent = 'خطا در دسترسی: ' + err.message;
+        console.error('Read access error:', err);
+    });
+
+</script>
 </body>
 </html>
