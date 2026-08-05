@@ -95,7 +95,6 @@
         receiptsListDiv.innerHTML = receiptHtml || '<p>فاکتور بسته‌شده‌ای وجود ندارد.</p>';
     });
 
-    // Make functions global so inline onclick can access them
     window.acceptOrder = function(orderId) {
         update(ref(db, `orders/${orderId}`), { status: 'آماده‌سازی' });
     }
