@@ -1,466 +1,1258 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>کافه دمو — منو</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        base: '#0d0c0a', surface: '#161412', card: '#1e1b17',
-                        'card-h': '#262219', bdr: '#2d2922', gold: '#c8a44e',
-                        'gold-h': '#dbb85a', cream: '#ede5d4', sand: '#a09583',
-                        stone: '#6b6055', ok: '#4caf50', warn: '#ff9800', bad: '#e53935',
-                    },
-                    fontFamily: { fa: ['Vazirmatn','sans-serif'] }
-                }
-            }
-        }
-    </script>
-    <style>
-        *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:'Vazirmatn',sans-serif;background:#0d0c0a;color:#ede5d4;overflow-x:hidden}
-        ::-webkit-scrollbar{width:6px}
-        ::-webkit-scrollbar-track{background:#0d0c0a}
-        ::-webkit-scrollbar-thumb{background:#2d2922;border-radius:3px}
-        .cat-pill{transition:all .25s;border:1px solid #2d2922;background:transparent;color:#a09583;white-space:nowrap}
-        .cat-pill:hover{border-color:#c8a44e;color:#ede5d4}
-        .cat-pill.on{background:#c8a44e;color:#0d0c0a;border-color:#c8a44e;font-weight:700}
-        .food-card{opacity:0;transform:translateY(24px);transition:opacity .45s,transform .45s,box-shadow .3s}
-        .food-card.vis{opacity:1;transform:translateY(0)}
-        .food-card:hover{box-shadow:0 8px 32px rgba(200,164,78,.07);transform:translateY(-3px)}
-        .food-card.vis:hover{transform:translateY(-3px)}
-        .food-card.locked{opacity:.45;filter:grayscale(.5);pointer-events:none}
-        .panel-slide{transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
-        .panel-slide.open{transform:translateX(0)}
-        .entry-glow{background:radial-gradient(ellipse at 50% 40%,rgba(200,164,78,.1) 0%,transparent 65%),#0d0c0a}
-        .badge-pop{animation:pop .3s ease}
-        @keyframes pop{0%{transform:scale(0)}60%{transform:scale(1.3)}100%{transform:scale(1)}}
-        .toast-in{animation:toastIn .35s ease forwards}
-        .toast-out{animation:toastOut .25s ease forwards}
-        @keyframes toastIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-        @keyframes toastOut{from{opacity:1}to{transform:translateY(-10px);opacity:0}}
-        .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
-        @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>کافه مهر</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <style>
+    :root {
+      --bg: #15120f;
+      --surface: #1e1a16;
+      --surface2: #282320;
+      --surface3: #332e28;
+      --accent: #c8956c;
+      --accent-hover: #daa882;
+      --accent-dim: rgba(200,149,108,0.12);
+      --fg: #ede6dd;
+      --fg2: #b5ada3;
+      --muted: #7a7068;
+      --success: #5dad5d;
+      --success-dim: rgba(93,173,93,0.12);
+      --danger: #d45454;
+      --danger-dim: rgba(212,84,84,0.12);
+      --warning: #e0a835;
+      --border: #352f28;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Vazirmatn', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.7;
+    }
+    body::before {
+      content: '';
+      position: fixed; top: -40%; left: -40%; width: 180%; height: 180%;
+      background: radial-gradient(ellipse at 25% 15%, rgba(200,149,108,0.07) 0%, transparent 55%),
+                  radial-gradient(ellipse at 75% 85%, rgba(200,149,108,0.04) 0%, transparent 50%);
+      animation: bgDrift 25s ease-in-out infinite alternate;
+      z-index: 0; pointer-events: none;
+    }
+    @keyframes bgDrift {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      100% { transform: translate(30px, -20px) rotate(2deg); }
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* هدر */
+    .app-header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(21,18,15,0.85); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .cafe-logo { display: flex; align-items: center; gap: 10px; }
+    .cafe-logo i { color: var(--accent); font-size: 22px; }
+    .cafe-logo span { font-weight: 800; font-size: 20px; letter-spacing: -0.5px; }
+    .table-badge {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--accent-dim); border: 1px solid rgba(200,149,108,0.25);
+      padding: 6px 14px; border-radius: 50px; font-size: 14px; font-weight: 600; color: var(--accent);
+    }
+    .table-badge button {
+      background: none; border: none; color: var(--accent); cursor: pointer;
+      font-size: 12px; opacity: 0.7; transition: opacity 0.2s;
+    }
+    .table-badge button:hover { opacity: 1; }
+
+    /* مودال شماره میز */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(10,8,6,0.92); backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; opacity: 0; transition: opacity 0.3s;
+    }
+    .modal-overlay.hidden { opacity: 0; pointer-events: none; }
+    .modal-overlay.visible { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 40px 32px; max-width: 400px; width: 100%;
+      text-align: center; transform: scale(0.9); transition: transform 0.3s;
+    }
+    .modal-overlay.visible .modal-box { transform: scale(1); }
+    .modal-box h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+    .modal-box p { color: var(--fg2); font-size: 14px; margin-bottom: 28px; }
+    .modal-box input {
+      width: 100%; padding: 14px 18px; border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border); background: var(--surface2); color: var(--fg);
+      font-family: inherit; font-size: 18px; font-weight: 700; text-align: center;
+      outline: none; transition: border-color 0.2s; margin-bottom: 20px;
+    }
+    .modal-box input:focus { border-color: var(--accent); }
+    .modal-box input::placeholder { color: var(--muted); font-weight: 400; font-size: 15px; }
+
+    /* دکمه‌ها */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 24px; border-radius: var(--radius-sm); border: none;
+      font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; outline: none;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary {
+      background: var(--accent); color: #1a1410;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #6bba6b; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #e06060; }
+    .btn-ghost {
+      background: transparent; color: var(--fg2); border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--surface2); color: var(--fg); }
+    .btn-sm { padding: 8px 16px; font-size: 13px; }
+    .btn-block { width: 100%; }
+    .btn-icon {
+      width: 36px; height: 36px; padding: 0; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+
+    /* دسته‌بندی‌ها */
+    .category-bar {
+      display: flex; gap: 8px; padding: 16px 20px; overflow-x: auto;
+      scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+      position: sticky; top: 57px; z-index: 40;
+      background: rgba(21,18,15,0.8); backdrop-filter: blur(15px);
+    }
+    .cat-tab {
+      flex-shrink: 0; scroll-snap-align: start;
+      padding: 10px 20px; border-radius: 50px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--fg2); font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all 0.25s; display: flex; align-items: center; gap: 8px;
+      font-family: inherit; white-space: nowrap;
+    }
+    .cat-tab:hover { background: var(--surface2); color: var(--fg); }
+    .cat-tab.active {
+      background: var(--accent); color: #1a1410; border-color: var(--accent); font-weight: 700;
+    }
+    .cat-tab i { font-size: 13px; }
+
+    /* گرید منو */
+    .menu-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px; padding: 8px 20px 120px;
+    }
+    .menu-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; cursor: default;
+      transition: all 0.25s; position: relative; overflow: hidden;
+      animation: cardIn 0.35s ease-out both;
+    }
+    .menu-card:hover { border-color: rgba(200,149,108,0.3); transform: translateY(-2px); }
+    .menu-card::before {
+      content: ''; position: absolute; top: 0; right: 0;
+      width: 60px; height: 60px;
+      background: radial-gradient(circle at top right, var(--accent-dim), transparent 70%);
+      pointer-events: none;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .menu-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+    .menu-card-name { font-size: 16px; font-weight: 700; }
+    .menu-card-price { font-size: 14px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+    .menu-card-desc { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+    .menu-card-footer { display: flex; align-items: center; gap: 8px; }
+    .add-btn {
+      flex: 1; padding: 10px; border-radius: var(--radius-sm);
+      background: var(--accent-dim); border: 1px solid rgba(200,149,108,0.2);
+      color: var(--accent); font-family: inherit; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center;
+      justify-content: center; gap: 6px;
+    }
+    .add-btn:hover { background: rgba(200,149,108,0.2); border-color: var(--accent); }
+    .add-btn:active { transform: scale(0.96); }
+    .qty-controls {
+      display: flex; align-items: center; gap: 4px; background: var(--accent);
+      border-radius: var(--radius-sm); overflow: hidden;
+    }
+    .qty-controls button {
+      width: 34px; height: 36px; border: none; background: transparent;
+      color: #1a1410; font-size: 16px; font-weight: 800; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .qty-controls button:hover { background: rgba(0,0,0,0.1); }
+    .qty-controls span {
+      min-width: 28px; text-align: center; font-weight: 800;
+      font-size: 15px; color: #1a1410;
+    }
+
+    /* دکمه سبد خرید */
+    .cart-fab {
+      position: fixed; bottom: 24px; left: 24px; z-index: 60;
+      width: 60px; height: 60px; border-radius: 50%; border: none;
+      background: var(--accent); color: #1a1410; font-size: 22px;
+      cursor: pointer; box-shadow: 0 6px 24px rgba(200,149,108,0.35);
+      transition: all 0.25s; display: flex; align-items: center; justify-content: center;
+    }
+    .cart-fab:hover { transform: scale(1.08); box-shadow: 0 8px 30px rgba(200,149,108,0.45); }
+    .cart-fab:active { transform: scale(0.95); }
+    .cart-badge {
+      position: absolute; top: -4px; left: -4px;
+      background: var(--danger); color: #fff; font-size: 12px; font-weight: 800;
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 2px solid var(--bg); transition: transform 0.2s;
+    }
+    .cart-badge.bump { animation: badgeBump 0.3s ease; }
+    @keyframes badgeBump {
+      0%,100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+
+    /* کشوی سبد خرید */
+    .drawer-overlay {
+      position: fixed; inset: 0; z-index: 70;
+      background: rgba(10,8,6,0.6); opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .drawer-overlay.open { opacity: 1; pointer-events: all; }
+    .cart-drawer {
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 80;
+      width: 380px; max-width: 90vw; background: var(--surface);
+      border-right: 1px solid var(--border);
+      transform: translateX(-100%); transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column;
+    }
+    .cart-drawer.open { transform: translateX(0); }
+    .drawer-header {
+      padding: 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .drawer-header h3 { font-size: 18px; font-weight: 800; }
+    .drawer-close {
+      width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--fg2); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+      transition: all 0.2s;
+    }
+    .drawer-close:hover { background: var(--surface3); color: var(--fg); }
+    .drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+    .drawer-footer {
+      padding: 16px 20px; border-top: 1px solid var(--border); background: var(--surface);
+    }
+    .cart-empty {
+      text-align: center; padding: 60px 20px; color: var(--muted);
+    }
+    .cart-empty i { font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.3; }
+    .cart-item {
+      display: flex; align-items: center; gap: 12px; padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .cart-item:last-child { border-bottom: none; }
+    .cart-item-info { flex: 1; }
+    .cart-item-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .cart-item-price { font-size: 13px; color: var(--accent); font-weight: 600; }
+    .cart-item-qty {
+      display: flex; align-items: center; gap: 2px;
+      background: var(--surface3); border-radius: var(--radius-sm); overflow: hidden;
+    }
+    .cart-item-qty button {
+      width: 30px; height: 30px; border: none; background: transparent;
+      color: var(--fg2); cursor: pointer; font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; font-family: inherit;
+      transition: all 0.15s;
+    }
+    .cart-item-qty button:hover { color: var(--fg); background: var(--border); }
+    .cart-item-qty span { min-width: 24px; text-align: center; font-weight: 700; font-size: 14px; }
+    .cart-item-remove {
+      width: 30px; height: 30px; border-radius: 50%; border: none;
+      background: var(--danger-dim); color: var(--danger); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 12px;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .cart-item-remove:hover { background: var(--danger); color: #fff; }
+    .cart-note {
+      width: 100%; padding: 10px 14px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: var(--surface2); color: var(--fg);
+      font-family: inherit; font-size: 13px; resize: none; outline: none;
+      margin-bottom: 12px; transition: border-color 0.2s;
+    }
+    .cart-note:focus { border-color: var(--accent); }
+    .cart-total {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px; font-size: 16px; font-weight: 700;
+    }
+    .cart-total span:last-child { color: var(--accent); font-size: 18px; }
+
+    /* مودال موفقیت */
+    .success-modal .modal-box { max-width: 420px; }
+    .success-icon {
+      width: 70px; height: 70px; border-radius: 50%;
+      background: var(--success-dim); color: var(--success);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px; margin: 0 auto 20px;
+    }
+    .success-modal h2 { color: var(--success); }
+    .success-details {
+      text-align: right; margin: 20px 0; padding: 16px;
+      background: var(--surface2); border-radius: var(--radius-sm);
+      font-size: 14px; line-height: 2.2;
+    }
+    .success-details strong { color: var(--accent); }
+
+    /* لینک مدیریت */
+    .admin-link {
+      position: fixed; bottom: 24px; right: 24px; z-index: 30;
+      font-size: 12px; color: var(--muted); opacity: 0.4;
+      cursor: pointer; transition: opacity 0.2s; text-decoration: none;
+    }
+    .admin-link:hover { opacity: 0.8; }
+
+    /* ===== پنل مدیریت ===== */
+    .admin-login-wrap {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 20px; position: relative; z-index: 1;
+    }
+    .admin-login-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 40px 32px; max-width: 380px; width: 100%; text-align: center;
+    }
+    .admin-login-box i { font-size: 40px; color: var(--accent); margin-bottom: 16px; }
+    .admin-login-box h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .admin-login-box p { color: var(--fg2); font-size: 14px; margin-bottom: 28px; }
+    .admin-login-box input {
+      width: 100%; padding: 13px 16px; border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border); background: var(--surface2); color: var(--fg);
+      font-family: inherit; font-size: 15px; text-align: center; outline: none;
+      transition: border-color 0.2s; margin-bottom: 20px; direction: ltr;
+    }
+    .admin-login-box input:focus { border-color: var(--accent); }
+    .login-error { color: var(--danger); font-size: 13px; margin-bottom: 16px; display: none; }
+
+    .admin-header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(21,18,15,0.9); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .admin-header-right { display: flex; align-items: center; gap: 12px; }
+    .admin-header-right h2 { font-size: 18px; font-weight: 800; }
+    .admin-header-right h2 i { color: var(--accent); margin-left: 8px; }
+    .admin-header-left { display: flex; align-items: center; gap: 8px; }
+
+    .admin-tabs {
+      display: flex; gap: 4px; padding: 12px 20px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 57px; z-index: 40;
+    }
+    .admin-tab {
+      padding: 10px 18px; border-radius: var(--radius-sm); border: none;
+      background: transparent; color: var(--fg2); font-family: inherit;
+      font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 8px; position: relative;
+    }
+    .admin-tab:hover { background: var(--surface2); color: var(--fg); }
+    .admin-tab.active { background: var(--accent-dim); color: var(--accent); font-weight: 700; }
+    .tab-badge {
+      background: var(--danger); color: #fff; font-size: 11px; font-weight: 800;
+      min-width: 20px; height: 20px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; padding: 0 6px;
+    }
+    .tab-badge.empty { display: none; }
+
+    .admin-content { padding: 20px; min-height: 60vh; }
+    .admin-tab-content { display: none; }
+    .admin-tab-content.active { display: block; }
+
+    .admin-empty {
+      text-align: center; padding: 80px 20px; color: var(--muted);
+    }
+    .admin-empty i { font-size: 52px; margin-bottom: 16px; display: block; opacity: 0.2; }
+
+    .order-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; margin-bottom: 14px;
+      animation: orderIn 0.35s ease-out both; transition: border-color 0.2s;
+    }
+    .order-card:hover { border-color: rgba(200,149,108,0.25); }
+    @keyframes orderIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .order-card-head {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
+    }
+    .order-table { font-size: 16px; font-weight: 800; }
+    .order-table span { color: var(--accent); }
+    .order-time { font-size: 13px; color: var(--muted); direction: ltr; }
+    .order-items-list { margin-bottom: 14px; }
+    .order-item-row {
+      display: flex; justify-content: space-between; padding: 6px 0;
+      font-size: 14px; border-bottom: 1px dashed rgba(53,47,40,0.6);
+    }
+    .order-item-row:last-child { border-bottom: none; }
+    .order-item-qty { color: var(--muted); font-weight: 600; margin: 0 6px; }
+    .order-item-price { color: var(--accent); font-weight: 600; direction: ltr; }
+    .order-note-text {
+      font-size: 13px; color: var(--fg2); background: var(--surface2);
+      padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 14px;
+      border-right: 3px solid var(--accent);
+    }
+    .order-total-row {
+      display: flex; justify-content: space-between; padding: 10px 0;
+      border-top: 1px solid var(--border); margin-bottom: 14px;
+      font-size: 16px; font-weight: 800;
+    }
+    .order-total-row span:last-child { color: var(--accent); }
+    .order-actions { display: flex; gap: 8px; }
+
+    /* رسید */
+    .receipts-summary {
+      display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .summary-card {
+      flex: 1; min-width: 150px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px 20px; text-align: center;
+    }
+    .summary-card .val { font-size: 24px; font-weight: 900; color: var(--accent); }
+    .summary-card .lbl { font-size: 13px; color: var(--muted); margin-top: 4px; }
+    .receipt-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin-bottom: 14px;
+      animation: orderIn 0.3s ease-out both;
+    }
+    .receipt-header {
+      background: var(--surface2); padding: 16px 20px; text-align: center;
+      border-bottom: 2px dashed var(--border);
+    }
+    .receipt-header h4 { font-size: 18px; font-weight: 800; margin-bottom: 2px; }
+    .receipt-header small { color: var(--muted); font-size: 13px; }
+    .receipt-body { padding: 16px 20px; }
+    .receipt-meta {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      margin-bottom: 14px; font-size: 13px;
+    }
+    .receipt-meta div span { color: var(--muted); }
+    .receipt-meta div strong { color: var(--fg); font-weight: 600; }
+    .receipt-items { margin-bottom: 14px; }
+    .receipt-footer {
+      display: flex; justify-content: space-between; padding: 12px 20px;
+      border-top: 2px dashed var(--border); font-size: 16px; font-weight: 800;
+    }
+    .receipt-footer span:last-child { color: var(--accent); }
+
+    /* تست */
+    .toast-container {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 200; display: flex; flex-direction: column; gap: 8px;
+      pointer-events: none; width: 90%; max-width: 400px;
+    }
+    .toast {
+      padding: 14px 20px; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 500; pointer-events: all;
+      animation: toastIn 0.3s ease-out, toastOut 0.3s ease-in 2.7s forwards;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+    .toast-success { background: var(--success); color: #fff; }
+    .toast-error { background: var(--danger); color: #fff; }
+    .toast-info { background: var(--surface3); color: var(--fg); border: 1px solid var(--border); }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 600px) {
+      .menu-grid { grid-template-columns: 1fr; }
+      .receipts-summary { flex-direction: column; }
+      .order-actions { flex-direction: column; }
+      .order-actions .btn { width: 100%; }
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      .receipt-card, .receipt-card * { visibility: visible; }
+      .receipt-card { position: absolute; left: 0; top: 0; width: 80mm; border: 1px solid #000; }
+      .no-print { display: none !important; }
+    }
+  </style>
 </head>
 <body>
-    <!-- ===== صفحه ورود شماره میز ===== -->
-    <div id="entryScreen" class="fixed inset-0 z-50 entry-glow flex items-center justify-center p-4">
-        <div class="text-center max-w-sm w-full">
-            <div class="w-20 h-20 rounded-full border-2 border-gold/30 flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-utensils text-gold text-2xl"></i>
-            </div>
-            <h1 id="entryTitle" class="text-3xl font-black text-cream mb-2">کافه دمو</h1>
-            <p class="text-sand text-sm mb-8">لطفا شماره میز خود را وارد کنید</p>
-            <div class="bg-card rounded-xl border border-bdr p-6">
-                <label class="text-xs text-sand font-medium block mb-2">شماره میز</label>
-                <input type="number" id="tableInput" min="1" max="999" class="w-full bg-surface border border-bdr rounded-lg px-4 py-3 text-cream text-center text-xl font-bold outline-none focus:border-gold transition mb-4" placeholder="مثلا ۵" autofocus>
-                <button onclick="enterTable()" class="w-full py-3 bg-gold text-base font-bold rounded-lg hover:bg-gold-h transition text-sm">ورود به منو</button>
-            </div>
+
+  <!-- ===== نمای مشتری ===== -->
+  <div id="customerView">
+    <header class="app-header">
+      <div class="cafe-logo">
+        <i class="fa-solid fa-mug-saucer"></i>
+        <span>کافه مهر</span>
+      </div>
+      <div class="table-badge" id="tableBadge" style="display:none">
+        <i class="fa-solid fa-chair"></i>
+        <span id="tableDisplay"></span>
+        <button onclick="showTableModal()" title="تغییر میز"><i class="fa-solid fa-pen"></i></button>
+      </div>
+    </header>
+
+    <div class="category-bar" id="categoryBar"></div>
+    <div class="menu-grid" id="menuGrid"></div>
+
+    <button class="cart-fab hidden" id="cartFab" onclick="toggleCart()">
+      <i class="fa-solid fa-basket-shopping"></i>
+      <span class="cart-badge" id="cartBadge">0</span>
+    </button>
+
+    <div class="drawer-overlay" id="drawerOverlay" onclick="toggleCart()"></div>
+    <div class="cart-drawer" id="cartDrawer">
+      <div class="drawer-header">
+        <h3><i class="fa-solid fa-basket-shopping" style="color:var(--accent);margin-left:8px"></i>سبد خرید</h3>
+        <button class="drawer-close" onclick="toggleCart()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="drawer-body" id="cartBody"></div>
+      <div class="drawer-footer" id="cartFooter" style="display:none">
+        <textarea class="cart-note" id="cartNote" rows="2" placeholder="توضیحات سفارش (اختیاری) - مثلاً بدون شکر"></textarea>
+        <div class="cart-total">
+          <span>جمع کل</span>
+          <span id="cartTotal"></span>
         </div>
-    </div>
-
-    <!-- ===== اپلیکیشن اصلی ===== -->
-    <div id="appScreen" class="hidden">
-        <!-- هدر -->
-        <header class="fixed top-0 inset-x-0 z-40 bg-base/80 backdrop-blur-xl border-b border-bdr/50">
-            <div class="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-                <h2 id="headerTitle" class="font-bold text-cream text-sm">کافه دمو</h2>
-                <div class="flex items-center gap-2">
-                    <span id="tableBadge" class="bg-gold/15 text-gold text-xs font-bold px-3 py-1 rounded-full">میز —</span>
-                    <button onclick="toggleStatus()" class="w-9 h-9 rounded-lg bg-surface flex items-center justify-center text-sand hover:text-gold transition" title="وضعیت سفارشات" aria-label="وضعیت سفارشات">
-                        <i class="fas fa-receipt text-sm"></i>
-                    </button>
-                    <button onclick="toggleCart()" class="relative w-9 h-9 rounded-lg bg-surface flex items-center justify-center text-sand hover:text-gold transition" title="سبد خرید" aria-label="سبد خرید">
-                        <i class="fas fa-shopping-bag text-sm"></i>
-                        <span id="cartBadge" class="hidden absolute -top-1 -start-1 w-5 h-5 bg-gold text-base text-xs font-black rounded-full flex items-center justify-center badge-pop">0</span>
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- دسته‌بندی‌ها -->
-        <div class="fixed top-14 inset-x-0 z-30 bg-base/90 backdrop-blur-lg border-b border-bdr/30">
-            <div id="catBar" class="max-w-5xl mx-auto px-4 py-3 flex gap-2 overflow-x-auto"></div>
-        </div>
-
-        <!-- گرید منو -->
-        <main class="max-w-5xl mx-auto px-4 pt-32 pb-28">
-            <div id="menuGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-            <div id="emptyMsg" class="hidden text-center py-20">
-                <i class="fas fa-utensils text-4xl text-stone mb-3 block"></i>
-                <p class="text-sand">آیتمی در این دسته‌بندی یافت نشد</p>
-            </div>
-        </main>
-
-        <!-- دکمه سبد شناور -->
-        <button id="cartFab" onclick="toggleCart()" class="hidden fixed bottom-6 start-6 z-30 w-14 h-14 bg-gold text-base rounded-full shadow-lg shadow-gold/20 flex items-center justify-center hover:bg-gold-h transition-all active:scale-95">
-            <i class="fas fa-shopping-bag text-lg"></i>
-            <span id="fabBadge" class="absolute -top-1 -start-1 w-6 h-6 bg-bad text-cream text-xs font-black rounded-full flex items-center justify-center">0</span>
+        <button class="btn btn-primary btn-block" id="submitBtn" onclick="submitOrder()">
+          <i class="fa-solid fa-paper-plane"></i>
+          ثبت سفارش
         </button>
+      </div>
     </div>
 
-    <!-- ===== پنل سبد خرید ===== -->
-    <div id="cartOverlay" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/60" onclick="toggleCart()"></div>
-        <div id="cartPanel" class="panel-slide absolute top-0 start-0 bottom-0 w-full max-w-sm bg-card border-e border-bdr flex flex-col">
-            <div class="flex items-center justify-between p-4 border-b border-bdr">
-                <h3 class="font-bold text-cream">سبد خرید</h3>
-                <button onclick="toggleCart()" class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-sand hover:text-cream transition"><i class="fas fa-times text-sm"></i></button>
-            </div>
-            <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
-            <div id="cartFooter" class="hidden border-t border-bdr p-4 space-y-3">
-                <div class="flex items-center justify-between text-lg font-bold">
-                    <span class="text-sand">مجموع</span>
-                    <span id="cartTotal" class="text-gold"></span>
-                </div>
-                <button onclick="placeOrder()" class="w-full py-3 bg-gold text-base font-bold rounded-lg hover:bg-gold-h transition text-sm">ثبت سفارش</button>
-            </div>
+    <!-- مودال شماره میز -->
+    <div class="modal-overlay visible" id="tableModal">
+      <div class="modal-box">
+        <h2>خوش آمدید</h2>
+        <p>شماره میز خود را وارد کنید تا سفارش‌گیری آغاز شود</p>
+        <input type="number" id="tableInput" min="1" max="999" placeholder="شماره میز" autofocus>
+        <button class="btn btn-primary btn-block" onclick="confirmTable()">
+          <i class="fa-solid fa-arrow-left"></i>
+          ورود به منو
+        </button>
+      </div>
+    </div>
+
+    <!-- مودال موفقیت سفارش -->
+    <div class="modal-overlay hidden" id="successModal">
+      <div class="modal-box success-modal">
+        <div class="success-icon"><i class="fa-solid fa-check"></i></div>
+        <h2>سفارش ثبت شد</h2>
+        <p>سفارش شما با موفقیت به آشپزخانه ارسال شد</p>
+        <div class="success-details" id="successDetails"></div>
+        <button class="btn btn-primary btn-block" onclick="closeSuccess()">
+          متوجه شدم
+        </button>
+      </div>
+    </div>
+
+    <a class="admin-link" onclick="showAdmin()">پنل مدیریت</a>
+  </div>
+
+  <!-- ===== نمای مدیریت ===== -->
+  <div id="adminView" class="hidden">
+    <!-- صفحه لاگین -->
+    <div class="admin-login-wrap" id="adminLogin">
+      <div class="admin-login-box">
+        <i class="fa-solid fa-lock"></i>
+        <h2>پنل مدیریت</h2>
+        <p>رمز عبور مدیر را وارد کنید</p>
+        <input type="password" id="adminPassInput" placeholder="رمز عبور" onkeydown="if(event.key==='Enter')adminLogin()">
+        <div class="login-error" id="loginError">رمز عبور اشتباه است</div>
+        <button class="btn btn-primary btn-block" onclick="adminLogin()">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          ورود
+        </button>
+        <div style="margin-top:20px">
+          <button class="btn btn-ghost btn-block btn-sm" onclick="showCustomer()">
+            <i class="fa-solid fa-arrow-right"></i>
+            بازگشت به منو
+          </button>
         </div>
+      </div>
     </div>
 
-    <!-- ===== پنل وضعیت سفارشات ===== -->
-    <div id="statusOverlay" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-black/60" onclick="toggleStatus()"></div>
-        <div id="statusPanel" class="panel-slide absolute top-0 start-0 bottom-0 w-full max-w-sm bg-card border-e border-bdr flex flex-col">
-            <div class="flex items-center justify-between p-4 border-b border-bdr">
-                <h3 class="font-bold text-cream">وضعیت سفارشات</h3>
-                <button onclick="toggleStatus()" class="w-8 h-8 rounded-lg bg-surface flex items-center justify-center text-sand hover:text-cream transition"><i class="fas fa-times text-sm"></i></button>
-            </div>
-            <div id="statusList" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+    <!-- داشبورد -->
+    <div id="adminPanel" class="hidden">
+      <header class="admin-header">
+        <div class="admin-header-right">
+          <h2><i class="fa-solid fa-gauge-high"></i>پنل مدیریت</h2>
         </div>
+        <div class="admin-header-left no-print">
+          <button class="btn btn-ghost btn-sm" onclick="showCustomer()">
+            <i class="fa-solid fa-store"></i>منو
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="adminLogout()">
+            <i class="fa-solid fa-right-from-bracket"></i>خروج
+          </button>
+        </div>
+      </header>
+      <div class="admin-tabs no-print">
+        <button class="admin-tab active" data-tab="pending" onclick="switchAdminTab('pending')">
+          <i class="fa-solid fa-bell"></i>سفارشات جدید
+          <span class="tab-badge" id="badgePending">0</span>
+        </button>
+        <button class="admin-tab" data-tab="preparing" onclick="switchAdminTab('preparing')">
+          <i class="fa-solid fa-fire-burner"></i>در حال آماده‌سازی
+          <span class="tab-badge" id="badgePreparing">0</span>
+        </button>
+        <button class="admin-tab" data-tab="receipts" onclick="switchAdminTab('receipts')">
+          <i class="fa-solid fa-receipt"></i>رسیدها
+        </button>
+      </div>
+      <div class="admin-content">
+        <div class="admin-tab-content active" id="tabPending"></div>
+        <div class="admin-tab-content" id="tabPreparing"></div>
+        <div class="admin-tab-content" id="tabReceipts"></div>
+      </div>
     </div>
+  </div>
 
-    <!-- تست -->
-    <div id="toasts" class="fixed bottom-4 end-4 z-[200] space-y-2 max-w-xs"></div>
+  <div class="toast-container" id="toastContainer"></div>
 
-    <script>
-    // ===================== فایربیس =====================
+  <script>
+    // ===== تنظیمات فایربیس =====
     const firebaseConfig = {
-        apiKey: "AIzaSyBg0db4HZtFPMp7nbnQLsLhsgWov3Lw7v0",
-        authDomain: "cafe-demo-36532.firebaseapp.com",
-        projectId: "cafe-demo-36532",
-        storageBucket: "cafe-demo-36532.firebasestorage.app",
-        messagingSenderId: "139708235074",
-        appId: "1:139708235074:web:0421f58c576b0f48149cdb"
+      apiKey: "AIzaSyBg0db4HZtFPMp7nbnQLsLhsgWov3Lw7v0",
+      authDomain: "cafe-demo-36532.firebaseapp.com",
+      databaseURL: "https://cafe-demo-36532-default-rtdb.firebaseio.com",
+      projectId: "cafe-demo-36532",
+      storageBucket: "cafe-demo-36532.firebasestorage.app",
+      messagingSenderId: "139708235074",
+      appId: "1:139708235074:web:0421f58c576b0f48149cdb",
+      measurementId: "G-PXSMYHJEWP"
     };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const db = firebase.database();
 
-    // ===================== ثابت‌ها =====================
-    const CATS = [
-        {id:'all',label:'همه',icon:'fa-grip'},
-        {id:'starters',label:'پیش‌غذا',icon:'fa-seedling'},
-        {id:'mains',label:'غذای اصلی',icon:'fa-plate-wheat'},
-        {id:'desserts',label:'دسر',icon:'fa-cake-candles'},
-        {id:'drinks',label:'نوشیدنی',icon:'fa-wine-glass'},
-    ];
-    const SEED = [
-        {name:'سالاد سزار',description:'کاهو رومی، پنیر پارمزان، نان تست و سس مخصوص',price:65000,category:'starters',image:'https://picsum.photos/seed/caesar88/400/300',available:true},
-        {name:'سوپ جو',description:'سوپ گرم جو با سبزیجات تازه و لیمو',price:45000,category:'starters',image:'https://picsum.photos/seed/soup44/400/300',available:true},
-        {name:'ماست و خیار',description:'ماست محلی با خیار، نعناع و گردو',price:35000,category:'starters',image:'https://picsum.photos/seed/mastkhiar7/400/300',available:true},
-        {name:'کباب کوبیده',description:'دو سیخ کباب کوبیده مخصوص با گوجه کبابی و برنج ایرانی',price:185000,category:'mains',image:'https://picsum.photos/seed/kabab22/400/300',available:true},
-        {name:'جوجه کباب',description:'سینه مرغ مرینیت شده با زعفران، گریل شده با برنج و گوجه',price:165000,category:'mains',image:'https://picsum.photos/seed/joojeh33/400/300',available:true},
-        {name:'قرمه‌سبزی',description:'خورشت قرمه‌سبزی اصیل ایرانی با لوبیا قرمز و برنج',price:145000,category:'mains',image:'https://picsum.photos/seed/ghormeh11/400/300',available:true},
-        {name:'زرشک پلو با مرغ',description:'برنج زعفرینی با زرشک و ران مرغ',price:155000,category:'mains',image:'https://picsum.photos/seed/zereshk55/400/300',available:false},
-        {name:'باقلوا',description:'باقلوا پسته و بادام تبریزی',price:55000,category:'desserts',image:'https://picsum.photos/seed/baklava77/400/300',available:true},
-        {name:'فرنی',description:'فرنی سنتی با گلاب و پسته',price:35000,category:'desserts',image:'https://picsum.photos/seed/freni66/400/300',available:true},
-        {name:'دوغ',description:'دوغ محلی با نعناع و پونه',price:15000,category:'drinks',image:'https://picsum.photos/seed/doogh99/400/300',available:true},
-        {name:'شربت بهارنارنج',description:'شربت خنک بهارنارنج با عرق نعناع',price:25000,category:'drinks',image:'https://picsum.photos/seed/sharbat12/400/300',available:true},
-        {name:'چای دم‌کرده',description:'چای ایرانی دم‌کرده با نبات و لیمو عمانی',price:20000,category:'drinks',image:'https://picsum.photos/seed/chai34/400/300',available:true},
-    ];
+    // رمز عبور مدیریت: admin123
+    const ADMIN_PASSWORD = 'admin123';
 
-    // ===================== حالت =====================
-    let tableNum = '';
-    let items = [];
+    // ===== داده‌های منو =====
+    const menuData = {
+      coffee: {
+        name: 'قهوه‌ها', icon: 'fa-mug-hot',
+        items: [
+          { id:'c1', name:'اسپرسو', desc:'یک شات قهوه غلیظ و خالص', price:45000 },
+          { id:'c2', name:'دوبل اسپرسو', desc:'دو شات اسپرسو قدرتمند', price:55000 },
+          { id:'c3', name:'آمریکانو', desc:'اسپرسو رقیق شده با آب داغ', price:55000 },
+          { id:'c4', name:'لاته', desc:'اسپرسو با شیر بخار داده شده', price:75000 },
+          { id:'c5', name:'کاپوچینو', desc:'اسپرسو، شیر و کف شیر غلیظ', price:75000 },
+          { id:'c6', name:'موکا', desc:'اسپرسو با شکلات داغ و شیر', price:85000 },
+          { id:'c7', name:'کارامل ماکیاتو', desc:'اسپرسو با شیر و سس کارامل', price:90000 },
+          { id:'c8', name:'آفوگاتو', desc:'بستنی وانیلی با اسپرسو تازه', price:95000 },
+        ]
+      },
+      tea: {
+        name: 'دمنوش‌ها', icon: 'fa-leaf',
+        items: [
+          { id:'t1', name:'چای سبز', desc:'چای سبز طبیعی با عطر ملایم', price:35000 },
+          { id:'t2', name:'چای ماسالا', desc:'چای سیاه با ادویه‌های هندی', price:45000 },
+          { id:'t3', name:'بابونه', desc:'دمنوش بابونه آرامش‌بخش', price:35000 },
+          { id:'t4', name:'گل‌محمدی', desc:'دمنوش گل‌محمدی تازه و معطر', price:40000 },
+          { id:'t5', name:'نعناع فلفلی', desc:'دمنوش نعناع تند و منعش', price:35000 },
+          { id:'t6', name:'دمنوش آلبالو', desc:'دمنوش آلبالو ترش و خوش‌طعم', price:45000 },
+        ]
+      },
+      cold: {
+        name: 'نوشیدنی سرد', icon: 'fa-snowflake',
+        items: [
+          { id:'d1', name:'آیس لته', desc:'لاته سرد با یخ خورده', price:85000 },
+          { id:'d2', name:'آیس موکا', desc:'موکای سرد با خامه فرم‌گرفته', price:95000 },
+          { id:'d3', name:'فراپه قهوه', desc:'مخلوط یخی قهوه و شیر', price:95000 },
+          { id:'d4', name:'شیک شکلاتی', desc:'شیک غلیظ و خامه‌ای شکلاتی', price:90000 },
+          { id:'d5', name:'شیک موز', desc:'شیک موز با شیر سرد', price:85000 },
+          { id:'d6', name:'لیموناد تازه', desc:'لیموناد طبیعی با نعناع تازه', price:55000 },
+          { id:'d7', name:'موهیتو', desc:'آب لیمو، نعناع و یخ خرد شده', price:65000 },
+        ]
+      },
+      dessert: {
+        name: 'کیک و دسر', icon: 'fa-cake-candles',
+        items: [
+          { id:'k1', name:'تیرامیسو', desc:'دسر ایتالیایی با قهوه و ماسکارپونه', price:120000 },
+          { id:'k2', name:'چیزکیک نیویورکی', desc:'چیزکیک کلاسیک غلیظ و خامه‌ای', price:110000 },
+          { id:'k3', name:'کیک شکلاتی', desc:'کیک شکلاتی مرطوب با گاناش', price:95000 },
+          { id:'k4', name:'کروسان', desc:'کروسان تازه و ورقه‌ای کره‌ای', price:65000 },
+          { id:'k5', name:'کیک هویج', desc:'کیک هویج با کرم پنیر', price:90000 },
+          { id:'k6', name:'پاناکوتا', desc:'دسر ایتالیایی با سس توت‌فرنگی', price:100000 },
+        ]
+      },
+      snack: {
+        name: 'غذا و اسنک', icon: 'fa-utensils',
+        items: [
+          { id:'s1', name:'ساندویچ مرغ', desc:'ساندویچ سرد مرغ و سبزیجات تازه', price:145000 },
+          { id:'s2', name:'ساندویچ تنماهی', desc:'تنماهی با تخم‌مرغ و سبزی', price:125000 },
+          { id:'s3', name:'پاستا آلفردو', desc:'پاستا با سس کرمی و پنیر پارمزان', price:155000 },
+          { id:'s4', name:'سالاد سزار', desc:'کاهو، مرغ گریل، نان تست و پارمزان', price:110000 },
+          { id:'s5', name:'سیب‌زمینی سرخ‌کرده', desc:'سیب‌زمینی خلالی ترد و نمکی', price:65000 },
+          { id:'s6', name:'ناگت مرغ', desc:'ناگت مرغ طلایی با سس مخصوص', price:85000 },
+        ]
+      }
+    };
+
+    // ===== وضعیت =====
+    let tableNumber = '';
     let cart = [];
-    let activeCat = 'all';
+    let activeCategory = 'coffee';
+    let adminTab = 'pending';
+    let orders = {};
+    let renderedOrderIds = new Set();
+    let lastOrderCount = 0;
     let cartOpen = false;
-    let statusOpen = false;
-    let ordersUnsub = null;
 
-    // ===================== راه‌اندازی =====================
-    async function init() {
-        await seedIfNeeded();
-        const saved = sessionStorage.getItem('tableNum');
-        if (saved) {
-            tableNum = saved;
-            showApp();
-        }
-        document.getElementById('tableInput').addEventListener('keydown', e => { if(e.key==='Enter') enterTable(); });
+    // ===== توابع کمکی =====
+    function toPersianNum(n) {
+      const fa = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+      return String(n).replace(/\d/g, d => fa[d]);
     }
 
-    async function seedIfNeeded() {
-        const s = await db.collection('menuItems').limit(1).get();
-        if (s.empty) {
-            const batch = db.batch();
-            SEED.forEach(item => {
-                batch.set(db.collection('menuItems').doc(), {...item, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
-            });
-            await batch.commit();
-        }
-        const doc = await db.collection('settings').doc('admin').get();
-        if (!doc.exists) {
-            await db.collection('settings').doc('admin').set({restaurantName:'کافه دمو', password:'km12345678'});
-        }
+    function formatPrice(price) {
+      return toPersianNum(price.toLocaleString('en-US')) + ' تومان';
     }
 
-    // ===================== ورود میز =====================
-    function enterTable() {
-        const v = document.getElementById('tableInput').value.trim();
-        if (!v || v < 1) { toast('شماره میز را وارد کنید','bad'); return; }
-        tableNum = v;
-        sessionStorage.setItem('tableNum', v);
-        showApp();
+    function timeAgo(ts) {
+      const diff = Date.now() - ts;
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'همین الان';
+      if (mins < 60) return toPersianNum(mins) + ' دقیقه پیش';
+      const hrs = Math.floor(mins / 60);
+      return toPersianNum(hrs) + ' ساعت پیش';
     }
 
-    function showApp() {
-        document.getElementById('entryScreen').classList.add('hidden');
-        document.getElementById('appScreen').classList.remove('hidden');
-        document.getElementById('tableBadge').textContent = 'میز ' + tableNum;
-        loadSettings();
-        loadMenu();
-        listenOrders();
+    function formatDate(ts) {
+      return new Date(ts).toLocaleString('fa-IR', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
     }
 
-    async function loadSettings() {
-        const doc = await db.collection('settings').doc('admin').get();
-        if (doc.exists) {
-            const name = doc.data().restaurantName || 'کافه دمو';
-            document.getElementById('entryTitle').textContent = name;
-            document.getElementById('headerTitle').textContent = name;
-            document.title = name + ' — منو';
-        }
+    function showToast(msg, type='info') {
+      const c = document.getElementById('toastContainer');
+      const t = document.createElement('div');
+      t.className = 'toast toast-' + type;
+      const icons = { success:'fa-check-circle', error:'fa-times-circle', info:'fa-info-circle' };
+      t.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i>${msg}`;
+      c.appendChild(t);
+      setTimeout(() => t.remove(), 3100);
     }
 
-    // ===================== بارگذاری منو =====================
-    function loadMenu() {
-        db.collection('menuItems').orderBy('createdAt','asc').onSnapshot(snap => {
-            items = snap.docs.map(d => ({id:d.id, ...d.data()}));
-            renderCats();
-            renderGrid();
-        });
+    function playNotifSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const playTone = (freq, start, dur) => {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.connect(g); g.connect(ctx.destination);
+          o.frequency.value = freq; g.gain.value = 0.2;
+          o.start(ctx.currentTime + start);
+          o.stop(ctx.currentTime + start + dur);
+        };
+        playTone(880, 0, 0.12);
+        playTone(1100, 0.15, 0.15);
+      } catch(e) {}
     }
 
-    function renderCats() {
-        document.getElementById('catBar').innerHTML = CATS.map(c =>
-            `<button class="cat-pill px-4 py-2 rounded-full text-xs font-medium flex items-center gap-1.5 ${activeCat===c.id?'on':''}" onclick="setCat('${c.id}')"><i class="fas ${c.icon}" style="font-size:10px"></i>${c.label}</button>`
-        ).join('');
+    // ===== نمای مشتری =====
+    function renderCategories() {
+      const bar = document.getElementById('categoryBar');
+      bar.innerHTML = Object.entries(menuData).map(([key, cat]) =>
+        `<button class="cat-tab ${key === activeCategory ? 'active' : ''}" onclick="selectCategory('${key}')">
+          <i class="fa-solid ${cat.icon}"></i>${cat.name}
+        </button>`
+      ).join('');
     }
 
-    function setCat(id) { activeCat = id; renderCats(); renderGrid(); }
-
-    function renderGrid() {
-        const grid = document.getElementById('menuGrid');
-        const empty = document.getElementById('emptyMsg');
-        const list = activeCat === 'all' ? items : items.filter(i => i.category === activeCat);
-        if (!list.length) { grid.innerHTML=''; empty.classList.remove('hidden'); return; }
-        empty.classList.add('hidden');
-        grid.innerHTML = list.map((it,i) => `
-            <div class="food-card rounded-xl border border-bdr overflow-hidden bg-card ${!it.available?'locked':''}" style="transition-delay:${i*50}ms">
-                <div class="relative h-40 overflow-hidden bg-surface">
-                    <img src="${it.image||'https://picsum.photos/seed/'+it.id+'/400/300'}" alt="${it.name}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110" onerror="this.src='https://picsum.photos/seed/fb${i}/400/300'">
-                    <span class="absolute top-2.5 start-2.5 bg-base/70 backdrop-blur-sm text-gold text-[10px] font-bold px-2 py-0.5 rounded-full">${CATS.find(c=>c.id===it.category)?.label||''}</span>
-                    ${!it.available?'<div class="absolute inset-0 bg-base/50 flex items-center justify-center"><span class="bg-base/80 text-sand px-3 py-1 rounded-full text-xs font-bold">ناموجود</span></div>':''}
-                </div>
-                <div class="p-4">
-                    <div class="flex items-start justify-between gap-2 mb-1.5">
-                        <h3 class="font-bold text-cream text-sm leading-relaxed">${it.name}</h3>
-                        <span class="text-gold font-bold text-sm whitespace-nowrap">${fmtP(it.price)}</span>
-                    </div>
-                    <p class="text-sand text-xs leading-relaxed line-clamp-2 mb-3">${it.description}</p>
-                    ${it.available?`<button onclick="addToCart('${it.id}')" class="w-full py-2 bg-gold/10 text-gold text-xs font-bold rounded-lg hover:bg-gold/20 transition flex items-center justify-center gap-1.5"><i class="fas fa-plus text-[10px]"></i>افزودن</button>`:''}
-                </div>
-            </div>
-        `).join('');
-        requestAnimationFrame(() => {
-            const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){e.target.classList.add('vis');obs.unobserve(e.target)} }), {threshold:.08, rootMargin:'0px 0px -20px 0px'});
-            grid.querySelectorAll('.food-card').forEach(c => obs.observe(c));
-        });
+    function selectCategory(key) {
+      activeCategory = key;
+      renderCategories();
+      renderMenuItems();
     }
 
-    // ===================== سبد خرید =====================
+    function getCartQty(itemId) {
+      const item = cart.find(c => c.id === itemId);
+      return item ? item.qty : 0;
+    }
+
+    function renderMenuItems() {
+      const grid = document.getElementById('menuGrid');
+      const items = menuData[activeCategory].items;
+      grid.innerHTML = items.map((item, i) => {
+        const qty = getCartQty(item.id);
+        return `<div class="menu-card" style="animation-delay:${i * 0.05}s">
+          <div class="menu-card-header">
+            <span class="menu-card-name">${item.name}</span>
+            <span class="menu-card-price">${formatPrice(item.price)}</span>
+          </div>
+          <div class="menu-card-desc">${item.desc}</div>
+          <div class="menu-card-footer">
+            ${qty === 0
+              ? `<button class="add-btn" onclick="addToCart('${item.id}')">
+                  <i class="fa-solid fa-plus"></i>افزودن
+                </button>`
+              : `<div class="qty-controls">
+                  <button onclick="changeQty('${item.id}', -1)">−</button>
+                  <span>${toPersianNum(qty)}</span>
+                  <button onclick="changeQty('${item.id}', 1)">+</button>
+                </div>`
+            }
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function findItem(id) {
+      for (const cat of Object.values(menuData)) {
+        const found = cat.items.find(i => i.id === id);
+        if (found) return found;
+      }
+      return null;
+    }
+
     function addToCart(id) {
-        const it = items.find(i => i.id === id);
-        if (!it) return;
-        const existing = cart.find(c => c.id === id);
-        if (existing) existing.qty++;
-        else cart.push({...it, qty:1});
-        saveCart();
-        updateCartUI();
-        toast(it.name + ' به سبد اضافه شد', 'ok');
+      const item = findItem(id);
+      if (!item) return;
+      const existing = cart.find(c => c.id === id);
+      if (existing) { existing.qty++; }
+      else { cart.push({ ...item, qty: 1 }); }
+      updateCartUI();
+      renderMenuItems();
     }
 
     function changeQty(id, delta) {
-        const c = cart.find(c => c.id === id);
-        if (!c) return;
-        c.qty += delta;
-        if (c.qty <= 0) cart = cart.filter(c => c.id !== id);
-        saveCart();
-        updateCartUI();
-        renderCartItems();
+      const idx = cart.findIndex(c => c.id === id);
+      if (idx === -1) return;
+      cart[idx].qty += delta;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      updateCartUI();
+      renderMenuItems();
     }
 
-    function saveCart() { sessionStorage.setItem('cart_'+tableNum, JSON.stringify(cart)); }
+    function removeCartItem(idx) {
+      cart.splice(idx, 1);
+      updateCartUI();
+      renderCartDrawer();
+      renderMenuItems();
+    }
 
-    function loadCart() {
-        const saved = sessionStorage.getItem('cart_'+tableNum);
-        cart = saved ? JSON.parse(saved) : [];
-        updateCartUI();
+    function getCartTotal() {
+      return cart.reduce((sum, c) => sum + c.price * c.qty, 0);
+    }
+
+    function getCartCount() {
+      return cart.reduce((sum, c) => sum + c.qty, 0);
     }
 
     function updateCartUI() {
-        const count = cart.reduce((s,c) => s+c.qty, 0);
-        const fab = document.getElementById('cartFab');
-        const badge = document.getElementById('cartBadge');
-        const fabBadge = document.getElementById('fabBadge');
-        if (count > 0) {
-            fab.classList.remove('hidden');
-            badge.classList.remove('hidden');
-            badge.textContent = count;
-            fabBadge.textContent = count;
-        } else {
-            fab.classList.add('hidden');
-            badge.classList.add('hidden');
-        }
+      const count = getCartCount();
+      const fab = document.getElementById('cartFab');
+      const badge = document.getElementById('cartBadge');
+      if (count > 0) {
+        fab.classList.remove('hidden');
+        badge.textContent = toPersianNum(count);
+        badge.classList.remove('bump');
+        void badge.offsetWidth;
+        badge.classList.add('bump');
+      } else {
+        fab.classList.add('hidden');
+      }
+      if (cartOpen) renderCartDrawer();
     }
 
     function toggleCart() {
-        cartOpen = !cartOpen;
-        const ov = document.getElementById('cartOverlay');
-        const pn = document.getElementById('cartPanel');
-        if (cartOpen) { ov.classList.remove('hidden'); loadCart(); renderCartItems(); requestAnimationFrame(()=>pn.classList.add('open')); }
-        else { pn.classList.remove('open'); setTimeout(()=>ov.classList.add('hidden'),350); }
+      cartOpen = !cartOpen;
+      document.getElementById('cartDrawer').classList.toggle('open', cartOpen);
+      document.getElementById('drawerOverlay').classList.toggle('open', cartOpen);
+      if (cartOpen) renderCartDrawer();
     }
 
-    function renderCartItems() {
-        const box = document.getElementById('cartItems');
-        const foot = document.getElementById('cartFooter');
-        if (!cart.length) {
-            box.innerHTML = '<div class="text-center py-12"><i class="fas fa-shopping-bag text-3xl text-stone mb-3 block"></i><p class="text-sand text-sm">سبد خرید خالی است</p></div>';
-            foot.classList.add('hidden');
-            return;
+    function renderCartDrawer() {
+      const body = document.getElementById('cartBody');
+      const footer = document.getElementById('cartFooter');
+      if (cart.length === 0) {
+        body.innerHTML = `<div class="cart-empty">
+          <i class="fa-solid fa-basket-shopping"></i>
+          <p>سبد خرید خالی است</p>
+        </div>`;
+        footer.style.display = 'none';
+        return;
+      }
+      footer.style.display = 'block';
+      body.innerHTML = cart.map((item, i) =>
+        `<div class="cart-item">
+          <div class="cart-item-info">
+            <div class="cart-item-name">${item.name}</div>
+            <div class="cart-item-price">${formatPrice(item.price * item.qty)}</div>
+          </div>
+          <div class="cart-item-qty">
+            <button onclick="changeCartDrawerQty(${i}, -1)">−</button>
+            <span>${toPersianNum(item.qty)}</span>
+            <button onclick="changeCartDrawerQty(${i}, 1)">+</button>
+          </div>
+          <button class="cart-item-remove" onclick="removeCartItem(${i})">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>`
+      ).join('');
+      document.getElementById('cartTotal').textContent = formatPrice(getCartTotal());
+    }
+
+    function changeCartDrawerQty(idx, delta) {
+      cart[idx].qty += delta;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      updateCartUI();
+      renderMenuItems();
+    }
+
+    // ===== میز =====
+    function confirmTable() {
+      const val = document.getElementById('tableInput').value.trim();
+      if (!val || parseInt(val) < 1) {
+        showToast('لطفاً شماره میز معتبر وارد کنید', 'error');
+        return;
+      }
+      tableNumber = val;
+      document.getElementById('tableModal').classList.remove('visible');
+      document.getElementById('tableModal').classList.add('hidden');
+      document.getElementById('tableBadge').style.display = 'flex';
+      document.getElementById('tableDisplay').textContent = 'میز ' + toPersianNum(tableNumber);
+    }
+
+    function showTableModal() {
+      document.getElementById('tableInput').value = tableNumber;
+      const m = document.getElementById('tableModal');
+      m.classList.remove('hidden');
+      m.classList.add('visible');
+      setTimeout(() => document.getElementById('tableInput').focus(), 100);
+    }
+
+    // Enter key برای شماره میز
+    document.getElementById('tableInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') confirmTable();
+    });
+
+    // ===== ثبت سفارش =====
+    function submitOrder() {
+      if (cart.length === 0) return;
+      const note = document.getElementById('cartNote').value.trim();
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> در حال ارسال...';
+
+      const orderData = {
+        tableNumber: tableNumber,
+        items: cart.map(c => ({ name: c.name, price: c.price, qty: c.qty })),
+        total: getCartTotal(),
+        note: note || null,
+        status: 'pending',
+        timestamp: Date.now()
+      };
+
+      db.ref('orders').push(orderData).then(ref => {
+        const orderId = ref.key.slice(-6).toUpperCase();
+        document.getElementById('successDetails').innerHTML = `
+          <div>شماره سفارش: <strong>${orderId}</strong></div>
+          <div>میز: <strong>${toPersianNum(tableNumber)}</strong></div>
+          <div>مبلغ کل: <strong>${formatPrice(orderData.total)}</strong></div>
+          <div>زمان تقریبی آماده‌سازی: <strong>۱۵ تا ۲۵ دقیقه</strong></div>
+        `;
+        // پاک کردن سبد
+        cart = [];
+        document.getElementById('cartNote').value = '';
+        updateCartUI();
+        toggleCart();
+        renderMenuItems();
+        // نمایش مودال موفقیت
+        const m = document.getElementById('successModal');
+        m.classList.remove('hidden');
+        m.classList.add('visible');
+      }).catch(err => {
+        showToast('خطا در ثبت سفارش. اتصال اینترنت را بررسی کنید.', 'error');
+      }).finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ثبت سفارش';
+      });
+    }
+
+    function closeSuccess() {
+      const m = document.getElementById('successModal');
+      m.classList.remove('visible');
+      m.classList.add('hidden');
+    }
+
+    // ===== تغییر نما =====
+    function showCustomer() {
+      detachOrdersListener();
+      document.getElementById('customerView').classList.remove('hidden');
+      document.getElementById('adminView').classList.add('hidden');
+    }
+
+    function showAdmin() {
+      document.getElementById('customerView').classList.add('hidden');
+      document.getElementById('adminView').classList.remove('hidden');
+      document.getElementById('adminLogin').classList.remove('hidden');
+      document.getElementById('adminPanel').classList.add('hidden');
+      document.getElementById('loginError').style.display = 'none';
+      document.getElementById('adminPassInput').value = '';
+      setTimeout(() => document.getElementById('adminPassInput').focus(), 100);
+    }
+
+    // ===== لاگین مدیریت =====
+    function adminLogin() {
+      const pass = document.getElementById('adminPassInput').value;
+      if (pass === ADMIN_PASSWORD) {
+        document.getElementById('adminLogin').classList.add('hidden');
+        document.getElementById('adminPanel').classList.remove('hidden');
+        renderedOrderIds.clear();
+        setupOrdersListener();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+        document.getElementById('adminPassInput').value = '';
+        document.getElementById('adminPassInput').focus();
+      }
+    }
+
+    function adminLogout() {
+      detachOrdersListener();
+      document.getElementById('adminLogin').classList.remove('hidden');
+      document.getElementById('adminPanel').classList.add('hidden');
+      document.getElementById('adminPassInput').value = '';
+    }
+
+    // ===== گوش دادن به سفارشات =====
+    function setupOrdersListener() {
+      db.ref('orders').on('value', snapshot => {
+        const prevCount = Object.keys(orders).length;
+        orders = snapshot.val() || {};
+        const newCount = Object.keys(orders).filter(k => orders[k].status === 'pending').length;
+
+        // صدای اعلان برای سفارشات جدید
+        if (Object.keys(orders).length > prevCount) {
+          playNotifSound();
         }
-        foot.classList.remove('hidden');
-        let total = 0;
-        box.innerHTML = cart.map(c => {
-            const sub = c.price * c.qty;
-            total += sub;
-            return `<div class="flex items-center gap-3 bg-surface rounded-lg p-3">
-                <img src="${c.image||'https://picsum.photos/seed/'+c.id+'/100/100'}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" onerror="this.src='https://picsum.photos/seed/fb${c.id}/100/100'">
-                <div class="flex-1 min-w-0">
-                    <h4 class="text-cream text-sm font-medium truncate">${c.name}</h4>
-                    <span class="text-gold text-xs font-bold">${fmtP(c.price)}</span>
-                </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    <button onclick="changeQty('${c.id}',-1)" class="w-7 h-7 rounded bg-card flex items-center justify-center text-sand hover:text-cream transition text-xs"><i class="fas fa-minus"></i></button>
-                    <span class="text-cream text-sm font-bold w-5 text-center">${c.qty}</span>
-                    <button onclick="changeQty('${c.id}',1)" class="w-7 h-7 rounded bg-card flex items-center justify-center text-sand hover:text-cream transition text-xs"><i class="fas fa-plus"></i></button>
-                </div>
-            </div>`;
-        }).join('');
-        document.getElementById('cartTotal').textContent = fmtP(total);
+
+        renderAdminContent();
+      });
     }
 
-    // ===================== ثبت سفارش =====================
-    async function placeOrder() {
-        if (!cart.length) return;
-        const total = cart.reduce((s,c) => s + c.price * c.qty, 0);
-        const orderItems = cart.map(c => ({name:c.name, price:c.price, qty:c.qty, itemId:c.id}));
-        try {
-            await db.collection('orders').add({
-                tableNumber: tableNum,
-                items: orderItems,
-                total: total,
-                status: 'pending',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                paidAt: null,
-                sentAt: null
-            });
-            cart = [];
-            saveCart();
-            updateCartUI();
-            toggleCart();
-            toast('سفارش شما با موفقیت ثبت شد', 'ok');
-        } catch(e) {
-            toast('خطا در ثبت سفارش', 'bad');
-            console.error(e);
-        }
+    function detachOrdersListener() {
+      db.ref('orders').off('value');
     }
 
-    // ===================== وضعیت سفارشات =====================
-    function listenOrders() {
-        if (ordersUnsub) ordersUnsub();
-        ordersUnsub = db.collection('orders')
-            .where('tableNumber','==', tableNum)
-            .orderBy('createdAt','desc')
-            .onSnapshot(snap => {
-                const orders = snap.docs.map(d => ({id:d.id,...d.data()}));
-                renderStatus(orders);
-            });
+    // ===== رندر محتوای مدیریت =====
+    function getOrdersByStatus(status) {
+      return Object.entries(orders)
+        .filter(([_, o]) => o.status === status)
+        .sort((a, b) => b[1].timestamp - a[1].timestamp);
     }
 
-    function renderStatus(orders) {
-        const box = document.getElementById('statusList');
-        if (!orders.length) {
-            box.innerHTML = '<div class="text-center py-12"><i class="fas fa-receipt text-3xl text-stone mb-3 block"></i><p class="text-sand text-sm">سفارشی ثبت نشده است</p></div>';
-            return;
-        }
-        const statusMap = {
-            pending: {label:'در انتظار پرداخت', color:'bg-warn', icon:'fa-clock'},
-            paid: {label:'پرداخت شده', color:'bg-ok', icon:'fa-check'},
-            sent: {label:'ارسال شده', color:'bg-gold', icon:'fa-truck'}
-        };
-        box.innerHTML = orders.map(o => {
-            const st = statusMap[o.status] || statusMap.pending;
-            const time = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'}) : '—';
-            return `<div class="bg-surface rounded-xl p-4 border border-bdr">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs text-sand">${time}</span>
-                    <span class="${st.color} text-base text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1"><i class="fas ${st.icon}" style="font-size:9px"></i>${st.label}</span>
-                </div>
-                <div class="space-y-1.5 mb-3">
-                    ${o.items.map(it => `<div class="flex items-center justify-between text-sm"><span class="text-cream">${it.name} <span class="text-sand">×${it.qty}</span></span><span class="text-gold text-xs font-medium">${fmtP(it.price * it.qty)}</span></div>`).join('')}
-                </div>
-                <div class="flex items-center justify-between pt-2 border-t border-bdr">
-                    <span class="text-sand text-xs">مجموع</span>
-                    <span class="text-gold font-bold">${fmtP(o.total)}</span>
-                </div>
-            </div>`;
-        }).join('');
+    function renderAdminContent() {
+      const pending = getOrdersByStatus('pending');
+      const preparing = getOrdersByStatus('accepted');
+      const completed = getOrdersByStatus('completed');
+
+      // بج‌ها
+      const bp = document.getElementById('badgePending');
+      const bpr = document.getElementById('badgePreparing');
+      bp.textContent = toPersianNum(pending.length);
+      bpr.textContent = toPersianNum(preparing.length);
+      bp.classList.toggle('empty', pending.length === 0);
+      bpr.classList.toggle('empty', preparing.length === 0);
+
+      renderPendingTab(pending);
+      renderPreparingTab(preparing);
+      renderReceiptsTab(completed);
     }
 
-    function toggleStatus() {
-        statusOpen = !statusOpen;
-        const ov = document.getElementById('statusOverlay');
-        const pn = document.getElementById('statusPanel');
-        if (statusOpen) { ov.classList.remove('hidden'); requestAnimationFrame(()=>pn.classList.add('open')); }
-        else { pn.classList.remove('open'); setTimeout(()=>ov.classList.add('hidden'),350); }
+    function renderPendingTab(ordersList) {
+      const container = document.getElementById('tabPending');
+      if (ordersList.length === 0) {
+        container.innerHTML = `<div class="admin-empty">
+          <i class="fa-solid fa-bell-slash"></i>
+          <p>سفارش جدیدی وجود ندارد</p>
+        </div>`;
+        return;
+      }
+      container.innerHTML = ordersList.map(([id, o]) => {
+        const isNew = !renderedOrderIds.has(id);
+        renderedOrderIds.add(id);
+        return buildOrderCard(id, o, isNew, 'pending');
+      }).join('');
     }
 
-    // ===================== ابزارها =====================
-    function fmtP(n) { return Number(n).toLocaleString('fa-IR') + ' تومان'; }
-
-    function toast(msg, type='info') {
-        const colors = {ok:'border-ok bg-ok/10',bad:'border-bad bg-bad/10',info:'border-gold bg-gold/10'};
-        const icons = {ok:'fa-check-circle text-ok',bad:'fa-times-circle text-bad',info:'fa-info-circle text-gold'};
-        const el = document.createElement('div');
-        el.className = `toast-in flex items-center gap-2.5 px-4 py-3 rounded-lg border ${colors[type]||colors.info} backdrop-blur-sm`;
-        el.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i><span class="text-sm text-cream">${msg}</span>`;
-        document.getElementById('toasts').appendChild(el);
-        setTimeout(() => { el.classList.replace('toast-in','toast-out'); setTimeout(()=>el.remove(),250); }, 3000);
+    function renderPreparingTab(ordersList) {
+      const container = document.getElementById('tabPreparing');
+      if (ordersList.length === 0) {
+        container.innerHTML = `<div class="admin-empty">
+          <i class="fa-solid fa-fire-burner"></i>
+          <p>سفارشی در حال آماده‌سازی نیست</p>
+        </div>`;
+        return;
+      }
+      container.innerHTML = ordersList.map(([id, o]) =>
+        buildOrderCard(id, o, false, 'preparing')
+      ).join('');
     }
 
-    // ===================== شروع =====================
+    function buildOrderCard(id, o, isNew, type) {
+      const orderId = id.slice(-6).toUpperCase();
+      const itemsHtml = o.items.map(item =>
+        `<div class="order-item-row">
+          <span>${item.name}<span class="order-item-qty">×${toPersianNum(item.qty)}</span></span>
+          <span class="order-item-price">${formatPrice(item.price * item.qty)}</span>
+        </div>`
+      ).join('');
+
+      const noteHtml = o.note ? `<div class="order-note-text"><i class="fa-solid fa-comment-dots" style="margin-left:6px;color:var(--accent)"></i>${o.note}</div>` : '';
+
+      let actionsHtml = '';
+      if (type === 'pending') {
+        actionsHtml = `<div class="order-actions">
+          <button class="btn btn-success btn-sm" style="flex:1" onclick="acceptOrder('${id}')">
+            <i class="fa-solid fa-check"></i>تایید سفارش
+          </button>
+          <button class="btn btn-danger btn-sm" style="flex:1" onclick="rejectOrder('${id}')">
+            <i class="fa-solid fa-times"></i>رد
+          </button>
+        </div>`;
+      } else if (type === 'preparing') {
+        actionsHtml = `<div class="order-actions">
+          <button class="btn btn-primary btn-sm btn-block" onclick="completeOrder('${id}')">
+            <i class="fa-solid fa-utensils"></i>آماده شد - صدور رسید
+          </button>
+        </div>`;
+      }
+
+      return `<div class="order-card" ${isNew ? 'style="border-color:var(--accent)"' : ''}>
+        <div class="order-card-head">
+          <div class="order-table">میز <span>${toPersianNum(o.tableNumber)}</span></div>
+          <div class="order-time">${timeAgo(o.timestamp)}</div>
+        </div>
+        <div class="order-items-list">${itemsHtml}</div>
+        ${noteHtml}
+        <div class="order-total-row">
+          <span>جمع کل</span>
+          <span>${formatPrice(o.total)}</span>
+        </div>
+        ${actionsHtml}
+      </div>`;
+    }
+
+    function renderReceiptsTab(ordersList) {
+      const container = document.getElementById('tabReceipts');
+      const totalRevenue = ordersList.reduce((s, [_, o]) => s + o.total, 0);
+
+      if (ordersList.length === 0) {
+        container.innerHTML = `<div class="admin-empty">
+          <i class="fa-solid fa-receipt"></i>
+          <p>هنوز رسیدی صادر نشده</p>
+        </div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="receipts-summary no-print">
+          <div class="summary-card">
+            <div class="val">${toPersianNum(ordersList.length)}</div>
+            <div class="lbl">تعداد رسید</div>
+          </div>
+          <div class="summary-card">
+            <div class="val">${formatPrice(totalRevenue)}</div>
+            <div class="lbl">جمع فروش</div>
+          </div>
+        </div>
+        ${ordersList.map(([id, o]) => buildReceiptCard(id, o)).join('')}
+      `;
+    }
+
+    function buildReceiptCard(id, o) {
+      const orderId = id.slice(-6).toUpperCase();
+      const completedAt = o.completedAt || o.timestamp;
+      const itemsHtml = o.items.map(item =>
+        `<div class="order-item-row">
+          <span>${item.name}<span class="order-item-qty">×${toPersianNum(item.qty)}</span></span>
+          <span class="order-item-price">${formatPrice(item.price * item.qty)}</span>
+        </div>`
+      ).join('');
+
+      return `<div class="receipt-card">
+        <div class="receipt-header">
+          <h4>کافه مهر</h4>
+          <small>رسید پرداخت</small>
+        </div>
+        <div class="receipt-body">
+          <div class="receipt-meta">
+            <div><span>شماره سفارش: </span><strong>#${orderId}</strong></div>
+            <div><span>میز: </span><strong>${toPersianNum(o.tableNumber)}</strong></div>
+            <div><span>تاریخ: </span><strong>${formatDate(completedAt)}</strong></div>
+            <div><span>وضعیت: </span><strong style="color:var(--success)">تکمیل شده</strong></div>
+          </div>
+          <div class="receipt-items">${itemsHtml}</div>
+        </div>
+        <div class="receipt-footer">
+          <span>جمع کل</span>
+          <span>${formatPrice(o.total)}</span>
+        </div>
+      </div>`;
+    }
+
+    // ===== عملیات سفارش =====
+    function acceptOrder(id) {
+      db.ref('orders/' + id + '/status').set('accepted').then(() => {
+        showToast('سفارش تایید شد و در حال آماده‌سازی است', 'success');
+      }).catch(() => showToast('خطا در بروزرسانی', 'error'));
+    }
+
+    function rejectOrder(id) {
+      db.ref('orders/' + id).remove().then(() => {
+        renderedOrderIds.delete(id);
+        showToast('سفارش رد شد', 'error');
+      }).catch(() => showToast('خطا در حذف سفارش', 'error'));
+    }
+
+    function completeOrder(id) {
+      const updates = {
+        status: 'completed',
+        completedAt: Date.now()
+      };
+      db.ref('orders/' + id).update(updates).then(() => {
+        showToast('رسید صادر شد', 'success');
+      }).catch(() => showToast('خطا در بروزرسانی', 'error'));
+    }
+
+    // ===== تب‌های مدیریت =====
+    function switchAdminTab(tab) {
+      adminTab = tab;
+      document.querySelectorAll('.admin-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tab);
+      });
+      document.querySelectorAll('.admin-tab-content').forEach(c => {
+        c.classList.toggle('active', c.id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+      });
+    }
+
+    // ===== راه‌اندازی =====
+    function init() {
+      renderCategories();
+      renderMenuItems();
+    }
+
     init();
-    </script>
+  </script>
 </body>
 </html>
