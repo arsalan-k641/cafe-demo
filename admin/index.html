@@ -3,35 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پنل مدیریت کافه</title>
+    <title>پنل مدیریت کافه مهر</title>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
-        body { font-family: Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
-        h1, h2 { color: #4a3b32; text-align: center; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .card { background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .order-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        ul { margin: 5px 0; padding-right: 20px; }
-        button { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
-        button:hover { background: #218838; }
-        .completed { background: #e9ecef; opacity: 0.8; }
-        .section-title { margin-top: 40px; border-bottom: 2px solid #ccc; padding-bottom: 5px; }
+        :root {
+            --bg: #0f0d0b;
+            --surface: #1a1714;
+            --surface2: #23201b;
+            --surface3: #2e2924;
+            --accent: #c8956c;
+            --accent-hover: #daa882;
+            --accent-dim: rgba(200,149,108,0.12);
+            --fg: #ede6dd;
+            --fg2: #b0a899;
+            --muted: #736b60;
+            --success: #4caf50;
+            --success-dim: rgba(76,175,80,0.12);
+            --danger: #e53935;
+            --danger-dim: rgba(229,57,53,0.12);
+            --info: #29b6f6;
+            --info-dim: rgba(41,182,246,0.12);
+            --border: #302a22;
+            --radius: 12px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background: var(--bg); color: var(--fg);
+            min-height: 100vh;
+        }
+
+        .status-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 8px 16px; font-size: 12px; text-align: center;
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--muted); transition: background 0.3s;
+        }
+        .status-dot.connected { background: var(--success); box-shadow: 0 0 6px rgba(76,175,80,0.5); }
+        .status-dot.error { background: var(--danger); }
+
+        .app-header {
+            position: sticky; top: 34px; z-index: 50;
+            background: rgba(15,13,11,0.9); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .app-header h1 { font-size: 20px; font-weight: 900; }
+        .app-header h1 i { color: var(--accent); margin-left: 8px; }
+        .back-link {
+            color: var(--fg2); text-decoration: none; font-size: 14px;
+            display: flex; align-items: center; gap: 6px; transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--fg); }
+
+        .tabs {
+            display: flex; gap: 4px; padding: 12px 20px;
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            position: sticky; top: 88px; z-index: 40;
+        }
+        .tab-btn {
+            padding: 10px 20px; border: none; border-radius: 8px;
+            background: transparent; color: var(--fg2);
+            font-family: inherit; font-size: 14px; font-weight: 500;
+            cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .tab-btn:hover { background: var(--surface2); color: var(--fg); }
+        .tab-btn.active { background: var(--accent-dim); color: var(--accent); font-weight: 700; }
+        .tab-badge {
+            background: var(--danger); color: #fff; font-size: 11px; font-weight: 800;
+            min-width: 20px; height: 20px; border-radius: 10px;
+            display: inline-flex; align-items: center; justify-content: center; padding: 0 6px;
+        }
+        .tab-badge.hide { display: none; }
+
+        .content { padding: 20px; max-width: 900px; margin: 0 auto; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .empty-state {
+            text-align: center; padding: 80px 20px; color: var(--muted);
+        }
+        .empty-state i { font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.2; }
+
+        .order-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px; margin-bottom: 14px;
+            animation: fadeUp 0.3s ease-out;
+            transition: border-color 0.3s;
+        }
+        .order-card.new-highlight { border-color: var(--accent); box-shadow: 0 0 20px var(--accent-dim); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .order-head {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+        }
+        .order-table { font-size: 17px; font-weight: 800; }
+        .order-table span { color: var(--accent); }
+        .order-time { font-size: 13px; color: var(--muted); direction: ltr; }
+
+        .order-items { margin-bottom: 14px; }
+        .order-item {
+            display: flex; justify-content: space-between; padding: 6px 0;
+            font-size: 14px; border-bottom: 1px dashed rgba(48,42,34,0.8);
+        }
+        .order-item:last-child { border-bottom: none; }
+        .order-item-qty { color: var(--muted); font-weight: 600; margin: 0 6px; }
+        .order-item-price { color: var(--accent); font-weight: 600; direction: ltr; }
+
+        .order-total {
+            display: flex; justify-content: space-between; padding: 12px 0;
+            border-top: 1px solid var(--border); margin-bottom: 14px;
+            font-size: 17px; font-weight: 900;
+        }
+        .order-total span:last-child { color: var(--accent); }
+
+        .order-actions { display: flex; gap: 8px; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 10px 20px; border-radius: 8px; border: none;
+            font-family: inherit; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-accept { background: var(--success); color: #fff; flex: 1; }
+        .btn-accept:hover { background: #43a047; }
+        .btn-done { background: var(--accent); color: #1a1410; flex: 1; }
+        .btn-done:hover { background: var(--accent-hover); }
+        .btn-reject { background: var(--danger-dim); color: var(--danger); }
+        .btn-reject:hover { background: var(--danger); color: #fff; }
+
+        .receipt-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden; margin-bottom: 14px;
+            animation: fadeUp 0.3s ease-out;
+        }
+        .receipt-head {
+            background: var(--surface2); padding: 16px 20px; text-align: center;
+            border-bottom: 2px dashed var(--border);
+        }
+        .receipt-head h3 { font-size: 18px; font-weight: 900; margin-bottom: 2px; }
+        .receipt-head small { color: var(--muted); font-size: 13px; }
+        .receipt-body { padding: 16px 20px; }
+        .receipt-meta {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+            margin-bottom: 14px; font-size: 13px;
+        }
+        .receipt-meta span { color: var(--muted); }
+        .receipt-meta strong { color: var(--fg); }
+        .receipt-foot {
+            display: flex; justify-content: space-between; padding: 12px 20px;
+            border-top: 2px dashed var(--border); font-size: 17px; font-weight: 900;
+        }
+        .receipt-foot span:last-child { color: var(--accent); }
+
+        .summary-bar {
+            display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap;
+        }
+        .summary-item {
+            flex: 1; min-width: 140px; background: var(--surface);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 16px 20px; text-align: center;
+        }
+        .summary-val { font-size: 22px; font-weight: 900; color: var(--accent); }
+        .summary-lbl { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+        @media (max-width: 600px) {
+            .order-actions { flex-direction: column; }
+            .summary-bar { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>پنل مدیریت سفارشات کافه</h1>
+<div class="status-bar">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">در حال اتصال به سرور...</span>
+</div>
 
-    <h2 class="section-title">سفارشات جدید و در حال پردازش</h2>
-    <div id="active-orders">در حال بارگذاری سفارشات...</div>
+<header class="app-header">
+    <h1><i class="fa-solid fa-gauge-high"></i>پنل مدیریت</h1>
+    <a class="back-link" href="../index.html"><i class="fa-solid fa-arrow-right"></i>بازگشت به منو</a>
+</header>
 
-    <h2 class="section-title">تاریخچه فاکتورها و رسیدها</h2>
-    <div id="receipts-list">در حال بارگذاری رسیدها...</div>
+<div class="tabs">
+    <button class="tab-btn active" data-tab="active" onclick="switchTab('active')">
+        <i class="fa-solid fa-bell"></i>سفارشات فعال
+        <span class="tab-badge hide" id="badgeActive">0</span>
+    </button>
+    <button class="tab-btn" data-tab="done" onclick="switchTab('done')">
+        <i class="fa-solid fa-receipt"></i>رسیدها
+    </button>
+</div>
+
+<div class="content">
+    <div class="tab-content active" id="tabActive">
+        <div class="empty-state"><i class="fa-solid fa-satellite-dish"></i><p>در حال دریافت سفارشات...</p></div>
+    </div>
+    <div class="tab-content" id="tabDone">
+        <div class="empty-state"><i class="fa-solid fa-receipt"></i><p>هنوز رسیدی صادر نشده</p></div>
+    </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBg0db4HZtFPMp7nbnQLsLhsgWov3Lw7v0",
@@ -47,62 +230,237 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const activeOrdersDiv = document.getElementById('active-orders');
-    const receiptsListDiv = document.getElementById('receipts-list');
+    // --- توابع کمکی ---
+    function toPersian(n) {
+        return String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+    }
+    function formatPrice(p) {
+        return toPersian(p.toLocaleString('en-US')) + ' تومان';
+    }
+    function timeAgo(ts) {
+        const m = Math.floor((Date.now() - ts) / 60000);
+        if (m < 1) return 'همین الان';
+        if (m < 60) return toPersian(m) + ' دقیقه پیش';
+        return toPersian(Math.floor(m / 60)) + ' ساعت پیش';
+    }
+    function formatDate(ts) {
+        return new Date(ts).toLocaleString('fa-IR', {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit'
+        });
+    }
+
+    // --- صدا ---
+    function playSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            [880, 1100].forEach((f, i) => {
+                const o = ctx.createOscillator(), g = ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                o.frequency.value = f; g.gain.value = 0.15;
+                o.start(ctx.currentTime + i * 0.15);
+                o.stop(ctx.currentTime + i * 0.15 + 0.12);
+            });
+        } catch(e) {}
+    }
+
+    // --- وضعیت اتصال ---
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+
+    onValue(ref(db, '.info/connected'), (snap) => {
+        if (snap.val() === true) {
+            statusDot.className = 'status-dot connected';
+            statusText.textContent = 'متصل به سرور - بروزرسانی لحظه‌ای فعال';
+        } else {
+            statusDot.className = 'status-dot error';
+            statusText.textContent = 'قطع اتصال از سرور';
+        }
+    });
+
+    // --- گوش دادن به سفارشات ---
+    let prevPendingIds = [];
 
     onValue(ref(db, 'orders'), (snapshot) => {
         const data = snapshot.val();
-        activeOrdersDiv.innerHTML = '';
-        receiptsListDiv.innerHTML = '';
+        const activeDiv = document.getElementById('tabActive');
+        const doneDiv = document.getElementById('tabDone');
 
         if (!data) {
-            activeOrdersDiv.innerHTML = '<p>سفارشی وجود ندارد.</p>';
-            receiptsListDiv.innerHTML = '<p>رسیدی ثبت نشده است.</p>';
+            activeDiv.innerHTML = '<div class="empty-state"><i class="fa-solid fa-check-circle"></i><p>سفارش فعالی وجود ندارد</p></div>';
+            doneDiv.innerHTML = '<div class="empty-state"><i class="fa-solid fa-receipt"></i><p>هنوز رسیدی صادر نشده</p></div>';
+            document.getElementById('badgeActive').classList.add('hide');
             return;
         }
 
+        const keys = Object.keys(data);
+        const currentPendingIds = keys.filter(k => data[k].status === 'در انتظار تایید');
+
+        // صدای اعلان برای سفارشات جدید
+        const newOnes = currentPendingIds.filter(k => !prevPendingIds.includes(k));
+        if (newOnes.length > 0) playSound();
+        prevPendingIds = currentPendingIds;
+
+        // تفکیک سفارشات
         let activeHtml = '';
-        let receiptHtml = '';
+        let doneHtml = '';
+        let activeCount = 0;
+        let totalRevenue = 0;
+        let doneCount = 0;
 
-        Object.keys(data).forEach(id => {
-            const order = data[id];
-            let itemsList = '';
-            order.items.forEach(item => {
-                itemsList += `<li>${item.name} (تعداد: ${item.qty}) - ${item.price.toLocaleString()} تومان</li>`;
-            });
+        // مرتب‌سازی بر اساس زمان (جدیدترین اول)
+        const sorted = keys.sort((a, b) => data[b].timestamp - data[a].timestamp);
 
-            const cardContent = `
-                <div class="card ${order.status === 'تکمیل شده' ? 'completed' : ''}">
-                    <div class="order-header">
-                        <span>میز شماره: ${order.tableNumber}</span>
-                        <span>وضعیت: ${order.status}</span>
-                    </div>
-                    <ul>${itemsList}</ul>
-                    <p><strong>مجموع مبلغ:</strong> ${order.totalPrice.toLocaleString()} تومان</p>
-                    ${order.status === 'در انتظار تایید' ? `<button onclick="acceptOrder('${id}')">تایید و آماده‌سازی</button>` : ''}
-                    ${order.status === 'آماده‌سازی' ? `<button onclick="completeOrder('${id}')" style="background:#007bff;">تکمیل و ثبت در فاکتورها</button>` : ''}
-                </div>
-            `;
+        sorted.forEach(id => {
+            const o = data[id];
 
-            if (order.status === 'تکمیل شده') {
-                receiptHtml += cardContent;
+            if (o.status === 'تکمیل شده') {
+                doneCount++;
+                totalRevenue += o.totalPrice || 0;
+                doneHtml += buildReceipt(id, o);
             } else {
-                activeHtml += cardContent;
+                activeCount++;
+                activeHtml += buildOrderCard(id, o);
             }
         });
 
-        activeOrdersDiv.innerHTML = activeHtml || '<p>سفارش فعالی وجود ندارد.</p>';
-        receiptsListDiv.innerHTML = receiptHtml || '<p>فاکتور بسته‌شده‌ای وجود ندارد.</p>';
+        // بروزرسانی بج
+        const badge = document.getElementById('badgeActive');
+        badge.textContent = toPersian(activeCount);
+        badge.classList.toggle('hide', activeCount === 0);
+
+        // رندر
+        activeDiv.innerHTML = activeHtml || '<div class="empty-state"><i class="fa-solid fa-check-circle"></i><p>سفارش فعالی وجود ندارد</p></div>';
+        doneDiv.innerHTML = `
+            <div class="summary-bar">
+                <div class="summary-item">
+                    <div class="summary-val">${toPersian(doneCount)}</div>
+                    <div class="summary-lbl">تعداد رسید</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-val">${formatPrice(totalRevenue)}</div>
+                    <div class="summary-lbl">جمع فروش</div>
+                </div>
+            </div>
+            ${doneHtml || '<div class="empty-state"><i class="fa-solid fa-receipt"></i><p>هنوز رسیدی صادر نشده</p></div>'}
+        `;
+
+    }, (error) => {
+        statusDot.className = 'status-dot error';
+        statusText.textContent = 'خطا در دسترسی: ' + error.message;
+        document.getElementById('tabActive').innerHTML = `
+            <div class="empty-state" style="color:var(--danger)">
+                <i class="fa-solid fa-triangle-exclamation" style="opacity:0.6"></i>
+                <p style="font-size:16px;font-weight:700">خطا در اتصال به Firebase</p>
+                <p style="margin-top:8px;font-size:13px">${error.message}</p>
+                <p style="margin-top:16px;font-size:13px;color:var(--fg2)">
+                    مطمئن شوید Rules دیتابیس را روی حالت عمومی تنظیم کرده‌اید
+                </p>
+            </div>`;
+        console.error('Firebase read error:', error);
     });
 
-    window.acceptOrder = function(orderId) {
-        update(ref(db, `orders/${orderId}`), { status: 'آماده‌سازی' });
+    // --- ساخت کارت سفارش ---
+    function buildOrderCard(id, o) {
+        const itemsHtml = (o.items || []).map(item => `
+            <div class="order-item">
+                <span>${item.name}<span class="order-item-qty">×${toPersian(item.qty)}</span></span>
+                <span class="order-item-price">${formatPrice(item.price)}</span>
+            </div>
+        `).join('');
+
+        let actions = '';
+        if (o.status === 'در انتظار تایید') {
+            actions = `
+                <div class="order-actions">
+                    <button class="btn btn-accept" onclick="window._accept('${id}')">
+                        <i class="fa-solid fa-check"></i>تایید و آماده‌سازی
+                    </button>
+                    <button class="btn btn-reject" onclick="window._reject('${id}')">
+                        <i class="fa-solid fa-times"></i>رد
+                    </button>
+                </div>`;
+        } else if (o.status === 'آماده‌سازی') {
+            actions = `
+                <div class="order-actions">
+                    <button class="btn btn-done" onclick="window._complete('${id}')">
+                        <i class="fa-solid fa-utensils"></i>آماده شد - صدور رسید
+                    </button>
+                </div>`;
+        }
+
+        return `
+            <div class="order-card ${o.status === 'در انتظار تایید' ? 'new-highlight' : ''}">
+                <div class="order-head">
+                    <div class="order-table">میز <span>${toPersian(o.tableNumber)}</span></div>
+                    <div class="order-time">${timeAgo(o.timestamp)}</div>
+                </div>
+                <div class="order-items">${itemsHtml}</div>
+                <div class="order-total">
+                    <span>جمع کل</span>
+                    <span>${formatPrice(o.totalPrice)}</span>
+                </div>
+                ${actions}
+            </div>`;
     }
 
-    window.completeOrder = function(orderId) {
-        update(ref(db, `orders/${orderId}`), { status: 'تکمیل شده' });
+    // --- ساخت رسید ---
+    function buildReceipt(id, o) {
+        const oid = id.slice(-6).toUpperCase();
+        const ct = o.completedAt || o.timestamp;
+        const itemsHtml = (o.items || []).map(item => `
+            <div class="order-item">
+                <span>${item.name}<span class="order-item-qty">×${toPersian(item.qty)}</span></span>
+                <span class="order-item-price">${formatPrice(item.price)}</span>
+            </div>
+        `).join('');
+
+        return `
+            <div class="receipt-card">
+                <div class="receipt-head">
+                    <h3>کافه مهر</h3>
+                    <small>رسید پرداخت</small>
+                </div>
+                <div class="receipt-body">
+                    <div class="receipt-meta">
+                        <div><span>شماره سفارش: </span><strong>#${oid}</strong></div>
+                        <div><span>میز: </span><strong>${toPersian(o.tableNumber)}</strong></div>
+                        <div><span>تاریخ: </span><strong>${formatDate(ct)}</strong></div>
+                        <div><span>وضعیت: </span><strong style="color:var(--success)">تکمیل شده</strong></div>
+                    </div>
+                    <div class="order-items">${itemsHtml}</div>
+                </div>
+                <div class="receipt-foot">
+                    <span>جمع کل</span>
+                    <span>${formatPrice(o.totalPrice)}</span>
+                </div>
+            </div>`;
     }
+
+    // --- عملیات سفارش ---
+    window._accept = function(id) {
+        update(ref(db, `orders/${id}`), { status: 'آماده‌سازی' })
+            .catch(err => alert('خطا: ' + err.message));
+    };
+
+    window._reject = function(id) {
+        if (confirm('آیا از رد این سفارش مطمئنید؟')) {
+            remove(ref(db, `orders/${id}`))
+                .catch(err => alert('خطا: ' + err.message));
+        }
+    };
+
+    window._complete = function(id) {
+        update(ref(db, `orders/${id}`), { status: 'تکمیل شده', completedAt: Date.now() })
+            .catch(err => alert('خطا: ' + err.message));
+    };
+
+    // --- تب‌ها ---
+    window.switchTab = function(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab' + (tab === 'active' ? 'Active' : 'Done')));
+    };
+
 </script>
-
 </body>
 </html>
